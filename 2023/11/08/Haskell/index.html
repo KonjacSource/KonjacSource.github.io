@@ -1,0 +1,1007 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/qu.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="KonjacSource">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="类型体操指北 (Haskell) 作为类型系统最复杂的非DT语言之一, Haskell有着强大的类型编程能力. 我们将从最简单的构造开始展示这些能力, 本文假定读者了解Haskell的基本语法. 本文使用的版本是GHC 9.0.2, 但在较旧的版本上这些代码也能运行. 首先我们需要打开以下拓展 12345678910&amp;#123;-# LANGUAGE MultiParamTypeClas">
+<meta property="og:type" content="article">
+<meta property="og:title" content="类型体操指北 (Haskell)">
+<meta property="og:url" content="http://konjacsource.github.io/2023/11/08/Haskell/index.html">
+<meta property="og:site_name" content="KonjacSource的博客">
+<meta property="og:description" content="类型体操指北 (Haskell) 作为类型系统最复杂的非DT语言之一, Haskell有着强大的类型编程能力. 我们将从最简单的构造开始展示这些能力, 本文假定读者了解Haskell的基本语法. 本文使用的版本是GHC 9.0.2, 但在较旧的版本上这些代码也能运行. 首先我们需要打开以下拓展 12345678910&amp;#123;-# LANGUAGE MultiParamTypeClas">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-11-07T17:30:08.000Z">
+<meta property="article:modified_time" content="2023-11-09T15:16:28.467Z">
+<meta property="article:author" content="KonjacSource">
+<meta property="article:tag" content="Haskell">
+<meta property="article:tag" content="编程">
+<meta property="article:tag" content="计算机">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>类型体操指北 (Haskell) - KonjacSource的博客</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"konjacsource.github.io","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 20vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>KonjacSource的博客</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/picture/LittleWitchAcademia.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="类型体操指北 (Haskell)"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-08 01:30" pubdate>
+          2023年11月8日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">类型体操指北 (Haskell)</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="类型体操指北-haskell">类型体操指北 (Haskell)</h1>
+<p>作为类型系统最复杂的非DT语言之一, Haskell有着强大的类型编程能力.
+我们将从最简单的构造开始展示这些能力, 本文假定读者了解Haskell的基本语法.
+本文使用的版本是GHC 9.0.2, 但在较旧的版本上这些代码也能运行.</p>
+<p>首先我们需要打开以下拓展</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-meta">&#123;-# LANGUAGE MultiParamTypeClasses #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE FlexibleInstances  #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeApplications #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE DataKinds #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeFamilies #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeOperators #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE KindSignatures #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE GADTs #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE UndecidableInstances #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE AllowAmbiguousTypes #-&#125;</span><br></code></pre></td></tr></table></figure>
+<p>并导入</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-keyword">import</span> Data.Kind(<span class="hljs-type">Type</span>)<br></code></pre></td></tr></table></figure>
+<p>读者不必完全熟悉这些拓展, 我们会慢慢介绍一些特别的语法.</p>
+<h2 id="value-type-kind">Value, Type, Kind</h2>
+<p>我们已经很熟悉Haskell中的一系列值(value), 比如
+<code>2,3,True,(\x -&gt; x * 2)</code>. 它们有各自所属的类型(type)</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-number">2</span>             :: <span class="hljs-type">Num</span> a =&gt; a <br><span class="hljs-number">3</span>             :: <span class="hljs-type">Num</span> a =&gt; a<br><span class="hljs-type">True</span>          :: <span class="hljs-type">Bool</span><br>(\x -&gt; x * <span class="hljs-number">2</span>) :: <span class="hljs-keyword">forall</span> a. <span class="hljs-type">Num</span> a =&gt; a -&gt; a<br></code></pre></td></tr></table></figure>
+<p>一个自然的想法是把类型也看作另一种值, 它们也有自己所属的类型,
+此时这个类型就可以称为 Kind. 比如我们会这样记</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-type">Num</span> a =&gt; a                :: <span class="hljs-type">Type</span><br><span class="hljs-type">Bool</span>                      :: <span class="hljs-type">Type</span> <br><span class="hljs-title">forall</span> a. <span class="hljs-type">Num</span> a =&gt; a -&gt; a :: <span class="hljs-type">Type</span><br></code></pre></td></tr></table></figure>
+<p>其中 <code>Type</code> 是这样一种"类型", 它的元素是所有类型, 比如
+<code>Int</code>, <code>Int -&gt; Int</code>,
+<code>forall a. Num a =&gt; a</code>.</p>
+<p><code>Maybe</code> 是 <code>Type</code> 的元素吗? 不是, 但
+<code>Maybe Int</code> 是, 所以 <code>Maybe</code> 实际是一个
+<code>Type</code> 到 <code>Type</code> 的函数.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-type">Int</span>    :: <span class="hljs-type">Type</span><br><span class="hljs-type">Maybe</span>  :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span><br>[]     :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span><br>(-&gt;)   :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span><br><span class="hljs-type">Either</span> :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>在 ghci 中使用 <code>:k t</code> 查看类型<code>t</code>所属的kind,
+输出结果中 <code>Type</code> 被记作 *.</p>
+</blockquote>
+<p>我不知道 Kind 有什么好翻译, 所以干脆不翻译.</p>
+<h2 id="类型层面的adt">类型层面的ADT</h2>
+<p>读者一定很熟悉一些Haskell中的ADT, 比如</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Bool</span> = <span class="hljs-type">True</span> | <span class="hljs-type">False</span></span><br></code></pre></td></tr></table></figure>
+<p>其中 <code>Bool</code> 是类型, <code>True</code> 和
+<code>False</code> 是值, 我们希望把它们统一提高一层,
+这样我们就能在类型编程时用上它们. <code>DataKinds</code>
+拓展允许我们这样做. 只要开启这个拓展,
+Haskell就会自动为所有的ADT(包括自定义的和其他模块里的)创建一个高一层的副本.
+以 <code>Bool</code> 为例, 打开 <code>DataKinds</code> 时,
+Haskell自动创建一个Kind <code>Bool</code>, 两个类型
+<code>'True 'False :: Bool</code>,
+这里单引号是用于区分值<code>True</code>值<code>False</code>和类型<code>'True</code>和类型<code>'False</code>(另一方面你永远不用担心类型<code>Bool</code>和Kind<code>Bool</code>会混淆).
+这样就有,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs haskell">&#x27;<span class="hljs-type">True</span>                :: <span class="hljs-type">Bool</span><br>&#x27;<span class="hljs-type">False</span>               :: <span class="hljs-type">Bool</span><br>&#x27;[]                  :: [a]<br>&#x27;[ &#x27;<span class="hljs-type">True</span>, &#x27;<span class="hljs-type">False</span> ]   :: [<span class="hljs-type">Bool</span>]<br>&#x27;<span class="hljs-type">True</span> &#x27;: &#x27;[]         :: [<span class="hljs-type">Bool</span>] <span class="hljs-comment">-- 这里需要打开 TypeOperators</span><br>&#x27;<span class="hljs-type">Just</span> <span class="hljs-type">True</span>           :: <span class="hljs-type">Maybe</span> <span class="hljs-type">Bool</span> <br>&#x27;<span class="hljs-type">Just</span> &#x27;<span class="hljs-type">True</span>          :: <span class="hljs-type">Maybe</span> <span class="hljs-type">Bool</span> <span class="hljs-comment">-- 注意这两个 Maybe Bool 实际上不同</span><br>&#x27;<span class="hljs-type">Just</span> <span class="hljs-type">Bool</span>           :: <span class="hljs-type">Maybe</span> <span class="hljs-type">Type</span><br>&#x27;( &#x27;<span class="hljs-type">True</span>, &#x27;<span class="hljs-type">Nothing</span> ) :: (<span class="hljs-type">Bool</span>, <span class="hljs-type">Maybe</span> a)<br></code></pre></td></tr></table></figure>
+<h3 id="自然数">自然数</h3>
+<p>我们熟悉的数字类型 <code>Int, Integer, Float, Double</code>
+都不是ADT, 无法被 <code>DataKinds</code> 提升,
+我们自然的需求是搞一个能用的数字类型. 最简单的当然是我们的自然数.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Nat</span> = <span class="hljs-type">Z</span> | <span class="hljs-type">S</span> <span class="hljs-type">Nat</span> <span class="hljs-keyword">deriving</span> <span class="hljs-type">Show</span></span><br></code></pre></td></tr></table></figure>
+<p>其中 <code>Z</code> 代表数字 <span class="math inline">\(0\)</span>,
+<code>S k</code> 代表自然数 <span class="math inline">\(k+1\)</span>,
+其中这样我们可以用 <code>S (S (S Z))</code> 代表数字 <span
+class="math inline">\(3\)</span>.
+读者可以尝试自行实现自然数上的加法和乘法以作练习.</p>
+<h2 id="类型层面的数据结构">类型层面的数据结构</h2>
+<h3 id="异构列表heterogeneous-list">异构列表(Heterogeneous List)</h3>
+<p>类型列表, Haskell 中的列表类型 <code>[]</code> 就是 ADT,
+所以它可以被自然提高到类型层面. 我们非常关注Kind <code>[Type]</code> ,
+它实际是一个由类型构成的列表. 有了这个它, 我们可以在 Haskell
+中实现异构列表(Heterogeneous List).</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-keyword">infixr</span> <span class="hljs-number">4</span> :+:<br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">HList</span> :: [<span class="hljs-type">Type</span>] -&gt; <span class="hljs-type">Type</span> where <span class="hljs-comment">-- 这里需要打开 GADTs 和 KindSignatures</span></span><br>  <span class="hljs-type">HNil</span>  :: <span class="hljs-type">HList</span> &#x27;[]<br>  (:+:) :: t -&gt; <span class="hljs-type">HList</span> ts -&gt; <span class="hljs-type">HList</span> (t &#x27;: ts)<br></code></pre></td></tr></table></figure>
+<p>这里给不熟悉 GADT 拓展的朋友们解释一下, 第一行是声明运算符的运算级,
+没什么好说的; 第二行声明了 <code>HList</code> 的 Kind, 接受一个类型列表,
+返回一个类型; <code>where</code> 之后的两行给出两个构造器,
+<code>HNil</code> 相当于一个空列表, <code>:+:</code>
+相当于将一个元素添加到列表头. 重点在于构造器的类型, GADT
+拓展的用途就是允许我们更精细地控制类型, <code>:+:</code> 的类型告诉我们,
+它接受两个参数, 一个是任意类型 <code>t</code> 的元素, 一个是
+<code>HList ts</code> 的元素(其中 <code>ts</code> 是任意类型列表),
+然后返回一个 <code>HList (t ': ts)</code>.</p>
+<p>于是,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-number">1</span> :+: <span class="hljs-type">True</span> :+: <span class="hljs-type">Just</span> <span class="hljs-number">2</span> :+: <span class="hljs-type">Nothing</span> :+: <span class="hljs-type">HNil</span><br>  :: (<span class="hljs-type">Num</span> n1, <span class="hljs-type">Num</span> n2) =&gt; <span class="hljs-type">HList</span> &#x27;[n1, <span class="hljs-type">Bool</span>, <span class="hljs-type">Maybe</span> n2, <span class="hljs-type">Maybe</span> a]<br></code></pre></td></tr></table></figure>
+<p>为了让我们的 <code>HList</code> 能够正常使用,
+我们先来定义一些常用函数. 首先是 <code>show</code>,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> &#x27;[]) <span class="hljs-keyword">where</span></span><br>  show <span class="hljs-type">HNil</span> = <span class="hljs-string">&quot;HNil&quot;</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> (<span class="hljs-type">Show</span> <span class="hljs-title">t</span>, <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> <span class="hljs-title">ts</span>)) =&gt; <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> (<span class="hljs-title">t</span> &#x27;: <span class="hljs-title">ts</span>)) <span class="hljs-keyword">where</span></span><br>  show (x :+: xs) = show x ++ <span class="hljs-string">&quot; :+: &quot;</span> ++ show xs<br></code></pre></td></tr></table></figure>
+<p>这段代码实质上是利用 Haskell 的类型类机制在类型上进行模式匹配,
+每一个模式都要提供一个instance, 注意这里 Haskell 不会提供模式完整性检查,
+请自己确保自己定义的instance能覆盖所有可能的情况.</p>
+<p>现在我们试着来做一下<code>HList</code>的拼接, 首先考虑类型要怎么变化,
+显然链表拼接的类型为</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">hAppend</span> :: <span class="hljs-type">HList</span> ls1 -&gt; <span class="hljs-type">HList</span> ls2 -&gt; <span class="hljs-type">HList</span> (ls1 ++ ls2)<br></code></pre></td></tr></table></figure>
+<p>其中 <code>++</code> 是普通列表的拼接, 但是 <code>DataKinds</code>
+不会帮我们把一般的函数提升到类型层面,
+我们需要手动实现类型列表的拼接.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> <span class="hljs-type">TAppend</span> (<span class="hljs-title">xs</span> :: [<span class="hljs-type">Type</span>]) (<span class="hljs-title">ys</span> :: [<span class="hljs-type">Type</span>]) :: [<span class="hljs-type">Type</span>] where</span><br>  <span class="hljs-type">TAppend</span> &#x27;[] ys = ys<br>  <span class="hljs-type">TAppend</span> (x &#x27;: xs) ys = x &#x27;: <span class="hljs-type">TAppend</span> xs ys<br></code></pre></td></tr></table></figure>
+<p>这里毫无疑问要使用 <code>TypeFamilies</code> 拓展,
+这个拓展允许我们来写类型层面的函数. 一些语言(比如C++, Scala3)有type
+family类似物, 这些语言的类型系统往往都是图灵完备的.</p>
+<p>有了 <code>TAppend</code> ,
+我们再使用先前的技巧在类型上进行模式匹配</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">HAppend</span> (<span class="hljs-title">ts1</span> :: [<span class="hljs-type">Type</span>]) <span class="hljs-keyword">where</span></span><br>  hAppend :: <span class="hljs-type">HList</span> ts1 -&gt; <span class="hljs-type">HList</span> ts2 -&gt; <span class="hljs-type">HList</span> (<span class="hljs-type">TAppend</span> ts1 ts2)<br><span class="hljs-class">  </span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">HAppend</span> &#x27;[] <span class="hljs-keyword">where</span></span><br>  hAppend <span class="hljs-type">HNil</span> ys = ys<br><span class="hljs-class">  </span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> (<span class="hljs-type">HAppend</span> <span class="hljs-title">ts</span>) =&gt; <span class="hljs-type">HAppend</span> (<span class="hljs-title">t</span> &#x27;: <span class="hljs-title">ts</span>) <span class="hljs-keyword">where</span></span><br>  hAppend (x :+: xs) ys = x :+: hAppend xs ys<br></code></pre></td></tr></table></figure>
+<p>这里 <code>class</code> 起到了标注类型的作用, <code>instance</code>
+相当于按模式依次进行实现.</p>
+<p>现在使用一个例子来展示异构列表的作用.</p>
+<p>众所周知, Haskell中的 <code>sequence</code> 非常常用, 它的类型是
+<code>sequence :: Monad m =&gt; [m a] -&gt; m [a]</code>(这不是最一般的类型,
+但我们现在只考虑这个特化版本).
+形象一点说就是把列表里的<code>m</code>"翻"出来. 这里用的是一般列表,
+我们实际可以写一个异构列表版本的 <code>sequence</code>, 这里称为
+<code>hSequence</code>. 先考虑<code>hSequence</code>的类型是什么,
+一个自然的想法是</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">hSequence</span> :: <span class="hljs-type">Moand</span> m =&gt; <span class="hljs-type">HList</span> (map m ts) -&gt; m (<span class="hljs-type">HList</span> ts)<br></code></pre></td></tr></table></figure>
+<p>同样我们需要把 <code>map</code> 提到类型层面</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> <span class="hljs-type">Map</span> (<span class="hljs-title">f</span> :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span>) (<span class="hljs-title">ts</span> :: [<span class="hljs-type">Type</span>]) :: [<span class="hljs-type">Type</span>] where</span><br>  <span class="hljs-type">Map</span> f &#x27;[] = &#x27;[]<br>  <span class="hljs-type">Map</span> f (t &#x27;: ts) = f t &#x27;: <span class="hljs-type">Map</span> f ts<br></code></pre></td></tr></table></figure>
+<p>然后定义函数</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">hAppend</span> :: <span class="hljs-type">HList</span> ts1 -&gt; <span class="hljs-type">HList</span> ts2 -&gt; <span class="hljs-type">HList</span> (<span class="hljs-type">TAppend</span> ts1 ts2)<br><span class="hljs-title">hAppend</span> <span class="hljs-type">HNil</span> ys = ys<br><span class="hljs-title">hAppend</span> (x :+: xs) ys = x :+: hAppend xs ys<br></code></pre></td></tr></table></figure>
+<p>大功告成.</p>
+<h3 id="定长列表vector">定长列表(Vector)</h3>
+<p>我们经常面对下标越界异常, 是否有办法可以在编译期完全杜绝下标越界呢?
+答案是肯定的, 这首先需要我们构造一个类型,
+这个类型能携带列表的长度信息.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-keyword">infixr</span> <span class="hljs-number">4</span> :::<br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Vect</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">VNil</span> :: <span class="hljs-type">Vect</span> &#x27;<span class="hljs-type">Z</span> a<br>  (:::) :: a -&gt; <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Vect</span> (&#x27;<span class="hljs-type">S</span> n) a<br></code></pre></td></tr></table></figure>
+<p>这里我们用到了之前DataTypes帮我们提升的自然数Kind.</p>
+<p>用自然语言翻译一下:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell">类型 <span class="hljs-type">Vect</span> n a 代表长度为 n 元素类型为 a 的列表构成的类型<br>  <span class="hljs-type">VNil</span> 是空列表, 所以它的类型是 <span class="hljs-type">Vect</span> &#x27;<span class="hljs-type">Z</span> a (记得我们之前把 &#x27;<span class="hljs-type">Z</span> 定作 <span class="hljs-number">0</span>)<br>  (x ::: xs) 相当于把元素 x 拼到列表 xs 前面, 并且这里列表的长度增长了一<br></code></pre></td></tr></table></figure>
+<p>同样按照上面的例子, 溜一下列表拼接</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:+) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :+ n = n<br>  (&#x27;<span class="hljs-type">S</span> m) :+ n = &#x27;<span class="hljs-type">S</span> (m :+ n)<br><br><span class="hljs-title">vAppend</span> :: <span class="hljs-type">Vect</span> m a -&gt; <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Vect</span> (m :+ n) a<br><span class="hljs-title">vAppend</span> <span class="hljs-type">VNil</span> ys = ys<br><span class="hljs-title">vAppend</span> (x:::xs) ys = x ::: vAppend xs ys<br></code></pre></td></tr></table></figure>
+<p>这里顺便定义了类型层面的自然数加法, 这个定义我们之后还要用.</p>
+<p>在详细叙述使用Vector的正确姿势前, 我们先介绍一下依值类型.</p>
+<h2 id="依值类型dependent-type">依值类型(Dependent Type)</h2>
+<p>免责声明: 本文仅简单介绍一点依值类型(DT),
+并解释如何在Haskell中"模拟"依值类型的写法,
+实质上Haskell并不支持真正的依值类型.
+并且如果你对依值类型在编程和数学中的应用感兴趣,
+Haskell以及本文也不是一个好的入门工具,
+你应该去学习类型论并掌握一门真正的依值类型语言. 如果你对Haskell比较熟悉,
+Idris和Agda是不错的入门选择, 除此之外, Lean4也十分值得学习.</p>
+<blockquote>
+<p>我们关注一个被称为依值函数的类型(也称作Pi类型),
+直接的理解就是一个返回值类型依赖于参数值的函数. 这个类型可以记作
+<code>(x :: T) -&gt; A</code> 其中 <code>T</code> 是一个普通类型,
+<code>A</code> 是一个(可以)含有 <code>x</code> 的类型
+Haskell目前不支持这样写法,
+我们现在需要思考如何在Haskell中模仿这种函数.</p>
+</blockquote>
+<p>在Haskell中模拟DT的技巧被称为 Singletons (好像有人叫单体类型),
+实质上是构造一个代理类型将类型 (通常是 <code>'Z, 'True</code> 这种)
+和值联系起来.</p>
+<p>我们来构造一个 <code>Bool</code> 的Singleton.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">SBool</span> :: <span class="hljs-type">Bool</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">STrue</span>  :: <span class="hljs-type">SBool</span> &#x27;<span class="hljs-type">True</span><br>  <span class="hljs-type">SFalse</span> :: <span class="hljs-type">SBool</span> &#x27;<span class="hljs-type">False</span><br></code></pre></td></tr></table></figure>
+<p>称此为"单体"的原因显而易见,
+类型<code>SBool 'True</code>有且只有一个元素<code>STrue</code>,
+<code>SBool 'False</code>也只有一个元素<code>SFalse</code>. 这就将
+<code>b :: Bool</code> 和 <code>SBool b</code> 联系了起来.</p>
+<p>定义Singleton上的函数时要同时定义类型层面和值层面, 比如</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> <span class="hljs-type">Not</span> (<span class="hljs-title">b</span> :: <span class="hljs-type">Bool</span>) :: <span class="hljs-type">Bool</span> where</span><br>  <span class="hljs-type">Not</span> &#x27;<span class="hljs-type">True</span> = &#x27;<span class="hljs-type">False</span><br>  <span class="hljs-type">Not</span> &#x27;<span class="hljs-type">False</span> = &#x27;<span class="hljs-type">True</span><br><br><span class="hljs-title">sNot</span> :: <span class="hljs-type">SBool</span> b -&gt; <span class="hljs-type">SBool</span> (<span class="hljs-type">Not</span> b)<br><span class="hljs-title">sNot</span> <span class="hljs-type">STrue</span>  = <span class="hljs-type">SFalse</span><br><span class="hljs-title">sNot</span> <span class="hljs-type">SFalse</span> = <span class="hljs-type">STrue</span><br></code></pre></td></tr></table></figure>
+<p><code>sNot</code> 就是一个Singleton风格的依值函数, 它相当于
+<code>(b :: Bool) -&gt; SBool (not b)</code>.</p>
+<p>现在考虑自然数的Singleton类型, 类似<code>SBool</code>,
+我们可以流畅的写出来.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">SNat</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">SZ</span> :: <span class="hljs-type">SNat</span> &#x27;<span class="hljs-type">Z</span><br>  <span class="hljs-type">SS</span> :: <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (&#x27;<span class="hljs-type">S</span> n)<br></code></pre></td></tr></table></figure>
+<p>显然,</p>
+<ol type="1">
+<li><code>SNat 'Z</code> 只有一个元素 <code>SZ</code>,</li>
+<li>对于任何一个自然数<code>k :: Nat</code>, 并且 <code>SNat k</code>
+只有一个元素 <code>sk</code>, 那么 <code>SNat ('S k)</code>
+也只有一个元素 <code>'SS sk</code>.</li>
+</ol>
+<p>这样数学归纳告诉我们对于任何自然数 <code>n</code> ,
+<code>SNat n</code> 只有唯一一个元素. 可见 <code>SNat</code>
+定义得很正确.</p>
+<p>我们来定义一下加法和乘法,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:+:) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :+: n = n<br>  (&#x27;<span class="hljs-type">S</span> m) :+: n = &#x27;<span class="hljs-type">S</span> (m :+: n)<br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:*:) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :*: _ = &#x27;<span class="hljs-type">Z</span><br>  (&#x27;<span class="hljs-type">S</span> m) :*: n = n :+: (m :*: n)<br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">6</span> |+|<br>(|+|) :: <span class="hljs-type">SNat</span> m -&gt; <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (m :+: n)<br><span class="hljs-type">SZ</span>   |+| n = n<br><span class="hljs-type">SS</span> m |+| n = <span class="hljs-type">SS</span> (m |+| n)<br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">7</span> |*|<br>(|*|) :: <span class="hljs-type">SNat</span> m -&gt; <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (m :*: n)<br><span class="hljs-type">SZ</span>   |*| _ = <span class="hljs-type">SZ</span><br><span class="hljs-type">SS</span> m |*| n = n |+| (m |*| n)<br></code></pre></td></tr></table></figure>
+<p>我们用 <code>:+:</code>, <code>:*:</code> 表示类型层面得加和乘, 用
+<code>|+|</code>, <code>|*|</code> 表示值层面的加和乘.</p>
+<p>为了方便从类型层面的 <code>Nat</code> 向值层面的 <code>SNat</code>
+进行转换, 我们可以这样做,
+注意这里又用到了之前对类型进行模式匹配的技巧</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Proxy</span> t = <span class="hljs-type">Proxy</span></span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">ToSNat</span> (<span class="hljs-title">nat</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  toSNat :: <span class="hljs-type">Proxy</span> nat -&gt; <span class="hljs-type">SNat</span> nat<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">ToSNat</span> &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  toSNat <span class="hljs-type">Proxy</span> = <span class="hljs-type">SZ</span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">ToSNat</span> n =&gt; <span class="hljs-type">ToSNat</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">n</span>) <span class="hljs-keyword">where</span></span><br>  toSNat <span class="hljs-type">Proxy</span> = <span class="hljs-type">SS</span> (toSNat (<span class="hljs-type">Proxy</span> :: <span class="hljs-type">Proxy</span> n))<br></code></pre></td></tr></table></figure>
+<p><code>Proxy</code> 实际上就是一个携带类型信息的 <code>()</code>,
+所以说是类型的代理. 然后可以这样使用:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">toSNat</span> (<span class="hljs-type">Proxy</span> :: <span class="hljs-type">Proxy</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>))) <span class="hljs-comment">-- =&gt; SS (SS SZ)</span><br></code></pre></td></tr></table></figure>
+<p>这里类型标注起到了输入类型参数的作用.</p>
+<h3 id="以vector为例">以Vector为例</h3>
+<p>我们继续定义一些 Vector 上的函数来展示我们 Singleton 的强大力量.
+首先是从列表转换到Vector</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">fromList</span> :: <span class="hljs-type">SNat</span> n -&gt; [a] -&gt; <span class="hljs-type">Vect</span> n a<br><span class="hljs-title">fromList</span> <span class="hljs-type">SZ</span>     _        = <span class="hljs-type">VNil</span><br><span class="hljs-title">fromList</span> (<span class="hljs-type">SS</span> n) (x : xs) = x ::: fromList n xs<br><span class="hljs-title">fromList</span> _ _ = error <span class="hljs-string">&quot;Index out of range&quot;</span><br></code></pre></td></tr></table></figure>
+<p>这个函数需要预先给定长度, 这揭示Haskell里模拟DT的根本性不足,
+就是不能依赖于运行时的值.</p>
+<p>然后是 <code>replicateV</code>, 它生成一个由重复元素组成的Vector.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">replicateV</span> :: <span class="hljs-type">SNat</span> n -&gt; a -&gt; <span class="hljs-type">Vect</span> n a<br><span class="hljs-title">replicateV</span> <span class="hljs-type">SZ</span>     _ = <span class="hljs-type">VNil</span><br><span class="hljs-title">replicateV</span> (<span class="hljs-type">SS</span> n) x = x ::: replicateV n x<br></code></pre></td></tr></table></figure>
+<h4 id="安全的下标">安全的下标</h4>
+<p>即便安全如 Haskell, 它的列表类型仍是下标不安全的, 你可以写
+<code>[1,2] !! 2</code> 来触发一个无法被类型系统发现的越界异常.
+我们尝试用 <code>Vect</code> 改进这一点.</p>
+<p>我们先定义一个可以限定上界的自然数类型</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Fin</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">FZ</span> :: <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> k)<br>  <span class="hljs-type">FS</span> :: <span class="hljs-type">Fin</span> k -&gt; <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> k)<br></code></pre></td></tr></table></figure>
+<p><code>Fin n</code> 是一个以 <code>n</code> 为上界的类型, 它有
+<code>n</code> 个元素. 以实例来看:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-type">FZ</span> :: <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>))<br><span class="hljs-type">FS</span> (<span class="hljs-type">FZ</span> :: <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)) :: <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>))<br></code></pre></td></tr></table></figure>
+<p>果然只有两个元素, 读者可以自行尝试写一个
+<code>FS (FS (FZ :: ???)))</code> 并尝试写出
+<code>???</code>的内容来验证这一点(剧透: 你写不出来).</p>
+<p>这个类型恰好可以被用来当作 <code>Vect</code> 的下标类型.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-keyword">infixl</span> <span class="hljs-number">9</span> !<br>(!) :: <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Fin</span> n -&gt; a<br>(x ::: _)  ! <span class="hljs-type">FZ</span>     = x<br>(_ ::: xs) ! (<span class="hljs-type">FS</span> f) = xs ! f<br><span class="hljs-comment">-- 写这个函数的时候 GHC 可能会犯二告诉你 pattern non-exhaustive,</span><br><span class="hljs-comment">-- 但是你把全部模式补上之后又会告诉你 pattern inaccessible. </span><br><span class="hljs-comment">-- 我在较新版的 GHC 里遇到了这个问题, 老版里没遇到.</span><br></code></pre></td></tr></table></figure>
+<p>现在我们的的确确可以在编译期保证不会有人写出这样的代码
+<code>(1:::2:::VNil) ! (FS (FS FZ))</code>.</p>
+<h3 id="定长矩阵">定长矩阵</h3>
+<p>一个矩阵当然可以像向量那样定下长度</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-type">Mat</span> m n a = <span class="hljs-type">Vect</span> m (<span class="hljs-type">Vect</span> <span class="hljs-title">n</span> <span class="hljs-title">a</span>)</span><br></code></pre></td></tr></table></figure>
+<p>矩阵上也能做很多操作, 笔者在学线代时写了一系列矩阵相关函数,
+详情请见(<a target="_blank" rel="noopener" href="https://github.com/KonjacSource/DependentMat"
+class="uri">https://github.com/KonjacSource/DependentMat</a>),
+此处不多赘述.</p>
+<h2 id="定理证明">定理证明</h2>
+<p>免责声明: 我们只能在Haskell里装模做样地做一些定理证明,
+本文也仅供娱乐, 如果你对定理证明感兴趣, 还请学习Agda/Lean4/Coq,
+对Haskell熟悉的读者可以快速上手Agda, 这里推荐PLFA(<a
+target="_blank" rel="noopener" href="https://plfa.github.io" class="uri">https://plfa.github.io</a>),
+并且此书有非常棒的中文翻译(<a
+target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/77442536"
+class="uri">https://zhuanlan.zhihu.com/p/77442536</a>, <a
+target="_blank" rel="noopener" href="https://agda-zh.github.io/PLFA-zh/"
+class="uri">https://agda-zh.github.io/PLFA-zh/</a>), ;
+Lean4也是一个体验非常优秀的定理证明器, 很有拿来做通用编程的潜力,
+有着非常丰富的数学定理库Mathlib; 然后笔者不会Coq, 不知道怎么安利.</p>
+<p>实际上用Haskell的来写定理证明会有大量的语法噪音,
+本文甚至可能成为劝退文, 所以如果你对这方面内容真的感兴趣,
+不妨学会一门定理证明器之后再来阅读.</p>
+<p>用编程语言(定理证明器实际也是编程语言)做定理证明的基础是Curry-Howard对应(下文称CH对应),
+该对应指出: 命题对应类型, 证明对应类型的项. 我们以一个例子来阐述.</p>
+<p>定义如下类型:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> (:&lt;:) :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> n<br>  <span class="hljs-type">LS</span> :: m :&lt;: n -&gt; &#x27;<span class="hljs-type">S</span> m :&lt;: &#x27;<span class="hljs-type">S</span> n<br></code></pre></td></tr></table></figure>
+<p>这个类型对应了小于关系, 在数学上,
+小于关系可以看作依赖于两个自然数(我们可以不考虑其它数上的小于关系)的命题,
+借助CH对应(类型⇔命题), 我们将它写作依赖于两个自然数的类型.
+然后给出构造器(项), 借助CH对应(证明⇔项),
+我们将其理解为证明小于关系的方式, 将其写作数学语言就可以说</p>
+<ul>
+<li><code>LZ</code> 可以证明 <span class="math inline">\(\forall n \in
+\mathbb{N}, 0 &lt; n + 1\)</span></li>
+<li>给 <code>LS</code> 一个 <span class="math inline">\(m &lt;
+n\)</span> 的证明, <code>LS</code> 还你一个
+<code>m + 1 &lt; n + 1</code> 的证明.</li>
+</ul>
+<p>这就是我们对小于关系的定义,
+<strong>通过指明如何证明一个关系成立来定义这个关系</strong>.</p>
+<p>假如我们想要证明 <span class="math inline">\(2 &lt; 4\)</span>
+该如何证明呢?</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">twoLtfour</span> :: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>) :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)))<br><span class="hljs-title">twoLtfour</span> = <span class="hljs-type">LS</span> (<span class="hljs-type">LS</span> (<span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)))<br></code></pre></td></tr></table></figure>
+<p>这里为了读者看得清晰标出了 <code>LZ</code> 的类型,
+实际上Haskell可以自己推出来. 我们看一下这是怎么证明出来的,
+请把下面代码块中的<code>::</code>读作"证明了".</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-comment">-- 首先</span><br><span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)<br><span class="hljs-comment">-- 然后, 回忆 LS 的类型签名, 它相当于在不等式两边同时加了一</span><br><span class="hljs-type">LS</span> <span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)<br><span class="hljs-comment">-- 最后</span><br><span class="hljs-type">LS</span> (<span class="hljs-type">LS</span> <span class="hljs-type">LZ</span>) :: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>) :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)))<br><span class="hljs-comment">-- Q.E.D.</span><br></code></pre></td></tr></table></figure>
+<h3 id="相等性">相等性</h3>
+<p>我们以证明加法交换律作为本文的结束, 在此之前, 先定义相等性.</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-keyword">infixl</span> <span class="hljs-number">4</span> :~:<br><span class="hljs-class"><span class="hljs-keyword">data</span> (:~:) :: k -&gt; k -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">Refl</span> :: a :~: a<br></code></pre></td></tr></table></figure>
+<p>相等性可以作用在任何两个项上(当然我们这里只用到自然数, 所以你把
+<code>k</code> 换成 <code>Nat</code> 也不打紧), 它唯一的构造器
+<code>Refl</code> (自反性) 精准地捕捉了两个事物相等的条件, 即,
+它俩就是一个东西.</p>
+<p>我们定义三个常用操作</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">sym</span> :: a :~: b -&gt; b :~: a<br><span class="hljs-title">sym</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br><br><span class="hljs-title">trans</span> :: a :~: b -&gt; b :~: c -&gt; a :~: c<br><span class="hljs-title">trans</span> <span class="hljs-type">Refl</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br><br><span class="hljs-title">cong</span> :: a :~: b -&gt; f a :~: f b<br><span class="hljs-title">cong</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br></code></pre></td></tr></table></figure>
+<p>它们的名字依次是对称性, 传递性, 合同性.</p>
+<p>对称性 <code>sym</code> 的类型是 <code>a :~: b -&gt; b :~: a</code>
+即, 你给它一个 <span class="math inline">\(a = b\)</span> 的证明,
+它给你一个 <span class="math inline">\(b = a\)</span> 的证明,
+这就是所谓的蕴含(现在你知道函数对应蕴含了).
+我们来看一下对称性是如何被证明的,</p>
+<p>当你写下如下代码时</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">sym</span> x = _<br></code></pre></td></tr></table></figure>
+<p>Haskell 会期望下划线处的类型是 <code>b :~: a</code>; 但当你把
+<code>x</code> 换成 <code>Refl</code> 时, 期望的类型就变成了
+<code>a :~: a</code>, 这时候就可以直接把 <code>Refl</code> 填进去了.
+这中间发生了什么? 其实是当你用 <code>Refl</code> 做模式匹配的时候,
+Haskell就会化简类型, 它会看到 <code>Refl</code> 的类型是
+<code>a :~: a</code>, 这时候它就知道该把变元 <code>b</code> 换成
+<code>a</code>, 于是最终的结果类型就变成了 <code>a :~: a</code>.</p>
+<p><code>trans</code> 和 <code>cong</code> 的原理也是同样的,
+读者可自行验证.</p>
+<h4 id="结合律">结合律</h4>
+<p>加法结合律是 <span class="math inline">\(\forall (a, b, c \in
+\mathbb{N}), (a + b) + c = a + (b + c)\)</span>, 写成类型就是</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">assoc</span> :: ((a :+: b):+: c) :~: (a :+: (b :+: c)) <span class="hljs-comment">-- Haskell帮我们写了前面的&quot;forall&quot;</span><br></code></pre></td></tr></table></figure>
+<p>由于我们需要在类型上进行模式匹配, 所以开一个类型类,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Assoc</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">c</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  assoc :: ((a :+: b) :+: c) :~: (a :+: (b :+: c))<br></code></pre></td></tr></table></figure>
+<p>然后在 <code>a</code> 上做归纳(递归)来证明,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> &#x27;<span class="hljs-type">Z</span> b c <span class="hljs-keyword">where</span></span><br>  assoc = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> a b c =&gt; <span class="hljs-type">Assoc</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b c <span class="hljs-keyword">where</span></span><br>  assoc = cong @_ @_ @&#x27;<span class="hljs-type">S</span> (assoc @a @b @c) <span class="hljs-comment">-- 这里要开 TypeApplications</span><br></code></pre></td></tr></table></figure>
+<p>TypeApplications拓展允许我们使用<code>@</code>来把类型参数显式地应用过去.</p>
+<p>首先看第一个情况, <code>Assoc 'Z b c</code>, 这个情况下
+<code>a = 'Z</code>, 然后Haskell可以计算出
+<code>((a :+: b) :+: c) = b :+: c</code> 和
+<code>(a :+: (b :+: c)) = b :+: c</code>, 所以 <code>assoc</code>
+的类型就化简成了 <code>(b :+: c) :~: (b :+: c)</code>, 用
+<code>Refl</code> 就直接证明了.</p>
+<p>第二个情况做了归纳, instance的声明表明 "要有
+<code>Assoc ('S a) b c</code> 的类型类, 就要现有
+<code>Assoc a b c</code> 的类型类"翻译一下就是"要证明对
+<code>('S a) b c</code> 的结合律, 需要先证明 <code>a b c</code>
+的结合律", 这意味着我们可以安全地(不会死循环地)调用
+<code>assoc @a @b @c</code> ,
+这实质就是在<code>a</code>上做数学归纳的过程.</p>
+<p>先来看目标类型,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> a b c =&gt; <span class="hljs-type">Assoc</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b c <span class="hljs-keyword">where</span></span><br>  assoc = _<br></code></pre></td></tr></table></figure>
+<p>下划线处的类型应该是
+<code>((('S a) :+: b) :+: c) :~: (('S a) :+: (b :+: c))</code>, 由
+<code>:+:</code> 的定义, Haskell可以将其化为最简形式
+<code>'S ((a :+: b) :+: c) :~: 'S (a :+: (b :+: c))</code>.</p>
+<p>来看一下是如何归纳的,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell">(assoc @a @b @c)                :: ((a :+: b) :+: c) :~: (a :+: (b :+: c))<br><span class="hljs-title">cong</span> @_ @_ @&#x27;<span class="hljs-type">S</span> (assoc @a @b @c) :: &#x27;<span class="hljs-type">S</span> ((a :+: b) :+: c) :~: &#x27;<span class="hljs-type">S</span> (a :+: (b :+: c))<br><span class="hljs-comment">-- 回忆 cong 的类型, 有 (cong @_ @_ @f (xxx :: x :~: y) :: f x :~: f y)</span><br><span class="hljs-comment">-- 相当于在等式两边同时作用一个函数, 以后我们会不写这些参数, 而直接写 cong (assoc @a @b @c)</span><br><span class="hljs-comment">-- Haskell可以推导出来这些参数, 在下面的例子里 f 都是 &#x27;S</span><br></code></pre></td></tr></table></figure>
+<p>这恰好和上面的最简形式一致, 所以我们直接填进去得到</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> a b c =&gt; <span class="hljs-type">Assoc</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b c <span class="hljs-keyword">where</span></span><br>  assoc = cong @_ @_ @&#x27;<span class="hljs-type">S</span> (assoc @a @b @c)<br></code></pre></td></tr></table></figure>
+<p>就像先前提到的, Haskell无法自动检查 <code>Assoc</code>
+的定义是否覆盖了所有的 <code>Nat</code>, 我们只能人工检查,
+我们的定义显然是完整覆盖了的,
+这是Haskell不能作为定理证明器的一个重要原因.
+定理证明器可以像检查模式匹配完整性那样检查结合律的完整性.
+另一个重要原因是Haskell不会进行停机检查,
+你可以轻易地写出无限递归来通过类型检查, 这实际对应了循环论证,
+定理证明器会确保你的函数一定在有限步内结束.</p>
+<h4 id="交换律">交换律</h4>
+<p>证明交换律之前先证明这样一个小引理: <span
+class="math inline">\(\forall n \in \mathbb{N}, n + 0 = n\)</span>,
+翻译成类型,</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Idr</span> (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  idr :: (n :+: &#x27;<span class="hljs-type">Z</span>) :~: n<br></code></pre></td></tr></table></figure>
+<p>证明也非常简单, 鼓励读者自行尝试, 答案如下:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  idr = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> n =&gt; <span class="hljs-type">Idr</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">n</span>) <span class="hljs-keyword">where</span></span><br>  idr = cong idr <span class="hljs-comment">-- 完整形式是 cong @(n:+:&#x27;Z) @n @&#x27;S (idr @n), Haskell替我们填写了这些参数</span><br></code></pre></td></tr></table></figure>
+<p>然后是另外一个引理: <span class="math inline">\(\forall (a, b \in
+\mathbb{N}), a + (b + 1) = (a + b) + 1\)</span>, 翻译成类型</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">SuccR</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  succR :: (a :+: &#x27;<span class="hljs-type">S</span> b) :~: &#x27;<span class="hljs-type">S</span> (a :+: b)<br></code></pre></td></tr></table></figure>
+<p>对 <code>a</code> 归纳, 有</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">SuccR</span> &#x27;<span class="hljs-type">Z</span> b <span class="hljs-keyword">where</span></span><br>  succR = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">SuccR</span> a b =&gt; <span class="hljs-type">SuccR</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b <span class="hljs-keyword">where</span></span><br>  succR = cong (succR @a @b)<br></code></pre></td></tr></table></figure>
+<p>现在来证明交换律: <span class="math inline">\(\forall (a, b \in
+\mathbb{N}), a + b = b + a\)</span>, 翻译成类型</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Comm</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  comm :: (a :+: b) :~: (b :+: a)<br></code></pre></td></tr></table></figure>
+<p>对 <code>b</code> 做归纳</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> a =&gt; <span class="hljs-type">Comm</span> a &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  comm = idr<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> (<span class="hljs-type">SuccR</span> <span class="hljs-title">a</span> <span class="hljs-title">b</span>, <span class="hljs-type">Comm</span> <span class="hljs-title">a</span> <span class="hljs-title">b</span>) =&gt; <span class="hljs-type">Comm</span> a (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">b</span>) <span class="hljs-keyword">where</span></span><br>  comm = <span class="hljs-keyword">let</span> eq1 = succR @a @b <br>             eq2 = cong (comm @a @b) <br>         <span class="hljs-keyword">in</span> trans eq1 eq2 <br></code></pre></td></tr></table></figure>
+<p>先看 <code>b</code> 为 <code>'Z</code> 的情况,
+此时Haskell能直接把目标类型化简为 <code>a :+: 'Z = a</code>,
+这就是我们的第一个引理<code>idr</code>, 直接填上就能证明.</p>
+<p>比较复杂的是 <code>b</code> 为 <code>'S b</code> 的情况, 我们把目标
+<code>(a :+: 'S b) :~: 'S (b :+: a)</code> 分成两个式子:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs haskell">(a :+: &#x27;<span class="hljs-type">S</span> b) :~: &#x27;<span class="hljs-type">S</span> (b :+: a)<br>分成<br><span class="hljs-title">eq1</span> :: (a :+: &#x27;<span class="hljs-type">S</span> b) :~: &#x27;<span class="hljs-type">S</span> (a :+: b)<br><span class="hljs-title">eq2</span> :: &#x27;<span class="hljs-type">S</span> (a :+: b) :~: &#x27;<span class="hljs-type">S</span> (b :+: a)<br></code></pre></td></tr></table></figure>
+<p>第一个式子就是我们证明的第二个引理 <code>succR</code>,
+所以我们在约束上写<code>SuccR a b</code>; 第二个式子两边都去掉
+<code>'S</code> 就是 <code>comm @a @b</code>,
+所以我们在约束上写<code>Comm a b</code>,
+然后再在<code>comm @a @b</code>类型的等式两边同时用<code>cong</code>加上<code>'S</code>函数,
+就能得到 <code>eq2</code>.</p>
+<p>最后再用等式的传递性连接 <code>eq1</code> 和 <code>eq2</code>
+就能得到最终的结果:</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">trans</span> eq1 eq2 :: (a :+: &#x27;<span class="hljs-type">S</span> b) :~: &#x27;<span class="hljs-type">S</span> (b :+: a)<br></code></pre></td></tr></table></figure>
+<h2 id="完整代码">完整代码</h2>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-meta">&#123;-# LANGUAGE MultiParamTypeClasses #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE FlexibleInstances  #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeApplications #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE DataKinds #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeFamilies #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE TypeOperators #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE KindSignatures #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE GADTs #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE UndecidableInstances #-&#125;</span><br><span class="hljs-meta">&#123;-# LANGUAGE AllowAmbiguousTypes #-&#125;</span><br><span class="hljs-meta">&#123;-# OPTIONS_GHC -Wno-missing-export-lists #-&#125;</span><br><br><span class="hljs-keyword">module</span> Test <span class="hljs-keyword">where</span><br><br><span class="hljs-keyword">import</span> Data.Kind (<span class="hljs-type">Type</span>)<br><br><span class="hljs-keyword">infixr</span> <span class="hljs-number">4</span> :+:<br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">HList</span> :: [<span class="hljs-type">Type</span>] -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">HNil</span>  :: <span class="hljs-type">HList</span> &#x27;[]<br>  (:+:) :: t -&gt; <span class="hljs-type">HList</span> ts -&gt; <span class="hljs-type">HList</span> (t &#x27;: ts)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> &#x27;[]) <span class="hljs-keyword">where</span></span><br>  show <span class="hljs-type">HNil</span> = <span class="hljs-string">&quot;HNil&quot;</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> (<span class="hljs-type">Show</span> <span class="hljs-title">t</span>, <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> <span class="hljs-title">ts</span>)) =&gt; <span class="hljs-type">Show</span> (<span class="hljs-type">HList</span> (<span class="hljs-title">t</span> &#x27;: <span class="hljs-title">ts</span>)) <span class="hljs-keyword">where</span></span><br>  show (x :+: xs) = show x ++ <span class="hljs-string">&quot;:+:&quot;</span> ++ show xs<br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> <span class="hljs-type">TAppend</span> (<span class="hljs-title">ls1</span> :: [<span class="hljs-type">Type</span>]) (<span class="hljs-title">ls2</span> :: [<span class="hljs-type">Type</span>]) :: [<span class="hljs-type">Type</span>] where</span><br>  <span class="hljs-type">TAppend</span> &#x27;[] ys = ys<br>  <span class="hljs-type">TAppend</span> (x &#x27;: xs) ys = x &#x27;: <span class="hljs-type">TAppend</span> xs ys<br><br><span class="hljs-title">hAppend</span> :: <span class="hljs-type">HList</span> ts1 -&gt; <span class="hljs-type">HList</span> ts2 -&gt; <span class="hljs-type">HList</span> (<span class="hljs-type">TAppend</span> ts1 ts2)<br><span class="hljs-title">hAppend</span> <span class="hljs-type">HNil</span> ys = ys<br><span class="hljs-title">hAppend</span> (x :+: xs) ys = x :+: hAppend xs ys<br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> <span class="hljs-type">Map</span> (<span class="hljs-title">f</span> :: <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span>) (<span class="hljs-title">ts</span> :: [<span class="hljs-type">Type</span>]) :: [<span class="hljs-type">Type</span>] where</span><br>  <span class="hljs-type">Map</span> f &#x27;[] = &#x27;[]<br>  <span class="hljs-type">Map</span> f (t &#x27;: ts) = f t &#x27;: <span class="hljs-type">Map</span> f ts<br><br><span class="hljs-comment">-- hSequence :: forall (m :: Type -&gt; Type) (ts :: [Type]) . Monad m =&gt; HList (Map m ts) -&gt; m (HList ts)</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">HSeq</span> (<span class="hljs-title">ts</span> :: [<span class="hljs-type">Type</span>]) <span class="hljs-keyword">where</span></span><br>  hSequence :: <span class="hljs-type">Monad</span> m =&gt; <span class="hljs-type">HList</span> (<span class="hljs-type">Map</span> m ts) -&gt; m (<span class="hljs-type">HList</span> ts)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">HSeq</span> &#x27;[] <span class="hljs-keyword">where</span></span><br>  hSequence <span class="hljs-type">HNil</span> = return <span class="hljs-type">HNil</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">HSeq</span> ts =&gt; <span class="hljs-type">HSeq</span> (<span class="hljs-title">t</span> &#x27;: <span class="hljs-title">ts</span>) <span class="hljs-keyword">where</span></span><br>  hSequence (x :+: xs) = <span class="hljs-keyword">do</span><br>    xr &lt;- x<br>    xsr &lt;- hSequence xs<br>    return (xr :+: xsr)<br><br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Nat</span> = <span class="hljs-type">Z</span> | <span class="hljs-type">S</span> <span class="hljs-type">Nat</span></span><br><br><span class="hljs-keyword">infixr</span> <span class="hljs-number">4</span> :::<br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Vect</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">VNil</span> :: <span class="hljs-type">Vect</span> &#x27;<span class="hljs-type">Z</span> a<br>  (:::) :: a -&gt; <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Vect</span> (&#x27;<span class="hljs-type">S</span> n) a<br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:+) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :+ n = n<br>  (&#x27;<span class="hljs-type">S</span> m) :+ n = &#x27;<span class="hljs-type">S</span> (m :+ n)<br><br><span class="hljs-title">vAppend</span> :: <span class="hljs-type">Vect</span> m a -&gt; <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Vect</span> (m :+ n) a<br><span class="hljs-title">vAppend</span> <span class="hljs-type">VNil</span> ys = ys<br><span class="hljs-title">vAppend</span> (x:::xs) ys = x ::: vAppend xs ys<br><br><br><br><span class="hljs-title">nat2Int</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Int</span><br><span class="hljs-title">nat2Int</span> <span class="hljs-type">Z</span> = <span class="hljs-number">0</span><br><span class="hljs-title">nat2Int</span> (<span class="hljs-type">S</span> n) = <span class="hljs-number">1</span> + nat2Int n<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Show</span> <span class="hljs-type">Nat</span> <span class="hljs-keyword">where</span></span><br>  show = (<span class="hljs-string">&quot;n&quot;</span>++) . show . nat2Int<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Num</span> <span class="hljs-type">Nat</span> <span class="hljs-keyword">where</span></span><br>  <span class="hljs-type">Z</span>     + n = n<br>  (<span class="hljs-type">S</span> m) + n = <span class="hljs-type">S</span> (m + n)<br><br>  <span class="hljs-type">Z</span>     - _     = <span class="hljs-type">Z</span><br>  m     - <span class="hljs-type">Z</span>     = m<br>  (<span class="hljs-type">S</span> m) - (<span class="hljs-type">S</span> n) = m - n<br><br>  <span class="hljs-type">Z</span>     * _ = <span class="hljs-type">Z</span><br>  (<span class="hljs-type">S</span> m) * n = n + (m * n)<br><br>  fromInteger <span class="hljs-number">0</span> = <span class="hljs-type">Z</span><br>  fromInteger n = <span class="hljs-type">S</span> $ fromInteger (n - <span class="hljs-number">1</span>)<br><br>  abs x = x<br>  signum _ = <span class="hljs-number">1</span><br><br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">SNat</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">SZ</span> :: <span class="hljs-type">SNat</span> &#x27;<span class="hljs-type">Z</span><br>  <span class="hljs-type">SS</span> :: <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (&#x27;<span class="hljs-type">S</span> n)<br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">6</span> |+|<br>(|+|) :: <span class="hljs-type">SNat</span> m -&gt; <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (m :+: n)<br><span class="hljs-type">SZ</span>   |+| n = n<br><span class="hljs-type">SS</span> m |+| n = <span class="hljs-type">SS</span> (m |+| n)<br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">7</span> |*|<br>(|*|) :: <span class="hljs-type">SNat</span> m -&gt; <span class="hljs-type">SNat</span> n -&gt; <span class="hljs-type">SNat</span> (m :*: n)<br><span class="hljs-type">SZ</span>   |*| _ = <span class="hljs-type">SZ</span><br><span class="hljs-type">SS</span> m |*| n = n |+| (m |*| n)<br><br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:+:) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :+: n = n<br>  (&#x27;<span class="hljs-type">S</span> m) :+: n = &#x27;<span class="hljs-type">S</span> (m :+: n)<br><br><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-keyword">family</span> (:*:) (<span class="hljs-title">m</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) :: <span class="hljs-type">Nat</span> where</span><br>  &#x27;<span class="hljs-type">Z</span>     :*: _ = &#x27;<span class="hljs-type">Z</span><br>  (&#x27;<span class="hljs-type">S</span> m) :*: n = n :+: (m :*: n)<br><br><br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Proxy</span> t = <span class="hljs-type">Proxy</span></span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">FromNat</span> (<span class="hljs-title">nat</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  fromNat :: <span class="hljs-type">Proxy</span> nat -&gt; <span class="hljs-type">Nat</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">FromNat</span> &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  fromNat _ = <span class="hljs-number">0</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">FromNat</span> n =&gt; <span class="hljs-type">FromNat</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">n</span>) <span class="hljs-keyword">where</span></span><br>  fromNat _ = <span class="hljs-type">S</span> $ fromNat (<span class="hljs-type">Proxy</span> :: <span class="hljs-type">Proxy</span> n)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">ToSNat</span> (<span class="hljs-title">nat</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  toSNat :: <span class="hljs-type">Proxy</span> nat -&gt; <span class="hljs-type">SNat</span> nat<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">ToSNat</span> &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  toSNat <span class="hljs-type">Proxy</span> = <span class="hljs-type">SZ</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">ToSNat</span> n =&gt; <span class="hljs-type">ToSNat</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">n</span>) <span class="hljs-keyword">where</span></span><br>  toSNat <span class="hljs-type">Proxy</span> = <span class="hljs-type">SS</span> (toSNat (<span class="hljs-type">Proxy</span> :: <span class="hljs-type">Proxy</span> n))<br><br><span class="hljs-title">fromList</span> :: <span class="hljs-type">SNat</span> n -&gt; [a] -&gt; <span class="hljs-type">Vect</span> n a<br><span class="hljs-title">fromList</span> <span class="hljs-type">SZ</span>     _        = <span class="hljs-type">VNil</span><br><span class="hljs-title">fromList</span> (<span class="hljs-type">SS</span> n) (x : xs) = x ::: fromList n xs<br><span class="hljs-title">fromList</span> _ _ = error <span class="hljs-string">&quot;Index out of range&quot;</span><br><br><span class="hljs-class"><span class="hljs-keyword">data</span> <span class="hljs-type">Fin</span> :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">FZ</span> :: <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> k)<br>  <span class="hljs-type">FS</span> :: <span class="hljs-type">Fin</span> k -&gt; <span class="hljs-type">Fin</span> (&#x27;<span class="hljs-type">S</span> k)<br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">9</span> !<br>(!) :: <span class="hljs-type">Vect</span> n a -&gt; <span class="hljs-type">Fin</span> n -&gt; a<br>(x ::: _)  ! <span class="hljs-type">FZ</span>     = x<br>(_ ::: xs) ! (<span class="hljs-type">FS</span> f) = xs ! f<br><br><br><span class="hljs-class"><span class="hljs-keyword">data</span> (:&lt;:) :: <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Nat</span> -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> n<br>  <span class="hljs-type">LS</span> :: m :&lt;: n -&gt; &#x27;<span class="hljs-type">S</span> m :&lt;: &#x27;<span class="hljs-type">S</span> n<br><br><span class="hljs-title">twoLtfour</span> :: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>) :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)))<br><span class="hljs-title">twoLtfour</span> = <span class="hljs-type">LS</span> (<span class="hljs-type">LS</span> (<span class="hljs-type">LZ</span> :: &#x27;<span class="hljs-type">Z</span> :&lt;: &#x27;<span class="hljs-type">S</span> (&#x27;<span class="hljs-type">S</span> &#x27;<span class="hljs-type">Z</span>)))<br><br><br><span class="hljs-keyword">infixl</span> <span class="hljs-number">4</span> :~:<br><span class="hljs-class"><span class="hljs-keyword">data</span> (:~:) :: k -&gt; k -&gt; <span class="hljs-type">Type</span> where</span><br>  <span class="hljs-type">Refl</span> :: a :~: a<br><br><span class="hljs-title">cong</span> :: a :~: b -&gt; f a :~: f b<br><span class="hljs-title">cong</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br><br><span class="hljs-title">sym</span> :: a :~: b -&gt; b :~: a<br><span class="hljs-title">sym</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br><br><span class="hljs-title">trans</span> :: a :~: b -&gt; b :~: c -&gt; a :~: c<br><span class="hljs-title">trans</span> <span class="hljs-type">Refl</span> <span class="hljs-type">Refl</span> = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Assoc</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">c</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  assoc :: ((a :+: b) :+: c) :~: (a :+: (b :+: c))<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> &#x27;<span class="hljs-type">Z</span> b c <span class="hljs-keyword">where</span></span><br>  assoc = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Assoc</span> a b c =&gt; <span class="hljs-type">Assoc</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b c <span class="hljs-keyword">where</span></span><br>  assoc = cong @_ @_ @&#x27;<span class="hljs-type">S</span> (assoc @a @b @c)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Idr</span> (<span class="hljs-title">n</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  idr :: (n :+: &#x27;<span class="hljs-type">Z</span>) :~: n<br><span class="hljs-class">  </span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  idr = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> n =&gt; <span class="hljs-type">Idr</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">n</span>) <span class="hljs-keyword">where</span></span><br>  idr = cong @(n:+:&#x27;<span class="hljs-type">Z</span>) @n @&#x27;<span class="hljs-type">S</span> (idr @n)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">SuccR</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  succR :: (a :+: &#x27;<span class="hljs-type">S</span> b) :~: &#x27;<span class="hljs-type">S</span> (a :+: b)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">SuccR</span> &#x27;<span class="hljs-type">Z</span> b <span class="hljs-keyword">where</span></span><br>  succR = <span class="hljs-type">Refl</span><br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">SuccR</span> a b =&gt; <span class="hljs-type">SuccR</span> (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">a</span>) b <span class="hljs-keyword">where</span></span><br>  succR = cong (succR @a @b)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-type">Comm</span> (<span class="hljs-title">a</span> :: <span class="hljs-type">Nat</span>) (<span class="hljs-title">b</span> :: <span class="hljs-type">Nat</span>) <span class="hljs-keyword">where</span></span><br>  comm :: (a :+: b) :~: (b :+: a)<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> <span class="hljs-type">Idr</span> a =&gt; <span class="hljs-type">Comm</span> a &#x27;<span class="hljs-type">Z</span> <span class="hljs-keyword">where</span></span><br>  comm = idr<br><span class="hljs-class"></span><br><span class="hljs-class"><span class="hljs-keyword">instance</span> (<span class="hljs-type">SuccR</span> <span class="hljs-title">a</span> <span class="hljs-title">b</span>, <span class="hljs-type">Comm</span> <span class="hljs-title">a</span> <span class="hljs-title">b</span>) =&gt; <span class="hljs-type">Comm</span> a (&#x27;<span class="hljs-type">S</span> <span class="hljs-title">b</span>) <span class="hljs-keyword">where</span></span><br>  comm = <span class="hljs-keyword">let</span> eq1 = succR @a @b <br>             eq2 = cong (comm @a @b) <br>         <span class="hljs-keyword">in</span> trans eq1 eq2 <br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Haskell/" class="print-no-link">#Haskell</a>
+      
+        <a href="/tags/%E7%BC%96%E7%A8%8B/" class="print-no-link">#编程</a>
+      
+        <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA/" class="print-no-link">#计算机</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>类型体操指北 (Haskell)</div>
+      <div>http://konjacsource.github.io/2023/11/08/Haskell/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>KonjacSource</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年11月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/12/Heisenberg/" title="海森堡方程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">海森堡方程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/09/20/%E7%83%AD%E5%8A%9B%E5%AD%A6%E7%AC%94%E8%AE%B0/" title="热力学笔记">
+                        <span class="hidden-mobile">热力学笔记</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KonjacSource/KonjacSource.github.io-comments');
+      s.setAttribute('issue-term', 'url');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="//cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+</body>
+</html>
