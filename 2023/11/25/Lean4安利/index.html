@@ -24,7 +24,7 @@
 <meta property="og:description" content="本文主要给有计算机背景(起码懂一门强类型编程语言, 如果读者懂函数式编程或者 Rust 就更好了)的人介绍一下 Lean4 (作为一个编程语言而不是证明助手). 环境配置不在本文介绍范围内, 请参考https:&#x2F;&#x2F;lean-lang.org&#x2F;lean4&#x2F;doc&#x2F;setup.html. 另外由于markdown缺少 Lean 的高亮, 我们会借用一些其他语言的高亮, 但文中的代码除特殊注明">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-25T11:42:45.000Z">
-<meta property="article:modified_time" content="2023-11-27T14:14:04.412Z">
+<meta property="article:modified_time" content="2023-11-27T14:28:18.914Z">
 <meta property="article:author" content="KonjacSource">
 <meta property="article:tag" content="编程">
 <meta property="article:tag" content="计算机">
@@ -312,7 +312,7 @@ Lean(和一大票函数式语言)更倾向于第二种写法, 这样我们可以
 <p>使用 <code>#eval add 2 3</code> 可以测试一下这个函数, 使用
 <code>#check add</code> 可以看一看这个函数的类型.
 然后我们可以更简单地定义 <code>addOne</code> 函数</p>
-<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> addOne = add <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> addOne := add <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
 <h3 id="lambda-表达式">lambda 表达式</h3>
 <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> add := fun (x y : <span class="hljs-type">Int</span>) =&gt; x + y<br></code></pre></td></tr></table></figure>
 <p>或者在上下文类型明确时不去标注参数类型</p>
