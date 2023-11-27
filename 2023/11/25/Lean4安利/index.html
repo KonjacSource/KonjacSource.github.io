@@ -24,7 +24,7 @@
 <meta property="og:description" content="本文主要给有计算机背景(起码懂一门强类型编程语言, 如果读者懂函数式编程或者 Rust 就更好了)的人介绍一下 Lean4 (作为一个编程语言而不是证明助手). 环境配置不在本文介绍范围内, 请参考https:&#x2F;&#x2F;lean-lang.org&#x2F;lean4&#x2F;doc&#x2F;setup.html. 另外由于markdown缺少 Lean 的高亮, 我们会借用一些其他语言的高亮, 但文中的代码除特殊注明">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-25T11:42:45.000Z">
-<meta property="article:modified_time" content="2023-11-27T14:04:13.232Z">
+<meta property="article:modified_time" content="2023-11-27T14:10:27.793Z">
 <meta property="article:author" content="KonjacSource">
 <meta property="article:tag" content="编程">
 <meta property="article:tag" content="计算机">
@@ -491,7 +491,7 @@ API的设计者可能对此感兴趣.</p>
 但这里需要的是一个从开着的门到某个状态的过程.</p>
 <p>这只是我们要做的事情的一半, 另一半是要去执行这个过程,
 我们可以定义一个输出执行器:</p>
-<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> interpret : <span class="hljs-type">DoorCmd</span> α β <span class="hljs-type">T</span> → <span class="hljs-type">IO</span> <span class="hljs-type">T</span><br>| <span class="hljs-type">Open</span> (key := key) =&gt; <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Door opened with &#123;key.user&#125;&#x27;s key.&quot;</span><br>| <span class="hljs-type">Close</span> =&gt; <span class="hljs-type">IO</span>.println <span class="hljs-string">&quot;Door closed.&quot;</span><br>| <span class="hljs-type">Lock</span> =&gt; <span class="hljs-type">IO</span>.println <span class="hljs-string">&quot;Door locked.&quot;</span><br>| <span class="hljs-type">Unlock</span> ⟨ user ⟩ =&gt; <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Door unlocked by &#123;user&#125;&quot;</span><br>| <span class="hljs-type">GenKey</span> user =&gt; <span class="hljs-keyword">do</span><br>    <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Generated a key for &#123;user&#125;&quot;</span><br>    return (<span class="hljs-type">Key</span>.mk user);<br>| <span class="hljs-type">DoorCmd</span>.pure x =&gt; <span class="hljs-type">Pure</span>.pure x<br>| <span class="hljs-type">DoorCmd</span>.bind m f =&gt; <span class="hljs-type">Bind</span>.bind (interpret m) (fun x =&gt; interpret (f x))<br><br></code></pre></td></tr></table></figure>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> interpret : <span class="hljs-type">DoorCmd</span> α β <span class="hljs-type">T</span> → <span class="hljs-type">IO</span> <span class="hljs-type">T</span><br>| <span class="hljs-type">Open</span> (key := key) =&gt; <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Door opened with &#123;key.user&#125;&#x27;s key.&quot;</span><br>| <span class="hljs-type">Close</span> =&gt; <span class="hljs-type">IO</span>.println <span class="hljs-string">&quot;Door closed.&quot;</span><br>| <span class="hljs-type">Lock</span> =&gt; <span class="hljs-type">IO</span>.println <span class="hljs-string">&quot;Door locked.&quot;</span><br>| <span class="hljs-type">Unlock</span> ⟨ user ⟩ =&gt; <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Door unlocked by &#123;user&#125;&quot;</span><br>| <span class="hljs-type">GenKey</span> user =&gt; <span class="hljs-keyword">do</span><br>    <span class="hljs-type">IO</span>.println s!<span class="hljs-string">&quot;Generated a key for &#123;user&#125;&quot;</span><br>    return (<span class="hljs-type">Key</span>.mk user);<br>| <span class="hljs-type">DoorCmd</span>.pure x =&gt; <span class="hljs-keyword">do</span> return x<br>| <span class="hljs-type">DoorCmd</span>.bind m f =&gt; <span class="hljs-keyword">do</span><br>    <span class="hljs-keyword">let</span> x &lt;- interpret m<br>    interpret (f x)<br></code></pre></td></tr></table></figure>
 <p>这个解释器可以把每一步的过程打印出来</p>
 <figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-meta">#eval interpret proc</span><br><span class="hljs-comment">-- print:</span><br><span class="hljs-comment">--  Generated a key for admin</span><br><span class="hljs-comment">--  Door unlocked by admin</span><br><span class="hljs-comment">--  Door opened with admin&#x27;s key.</span><br><span class="hljs-comment">--  Door closed.</span><br><span class="hljs-comment">--  Door locked.</span><br></code></pre></td></tr></table></figure>
 <p>如果你是在写一个类型安全的 OpenGL API包装, 那你就要为你的 API
@@ -896,21 +896,5 @@ class="uri">https://lean-lang.org/functional_programming_in_lean/</a>,
   <noscript>
     <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
   </noscript>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {
-            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-            processEscapes: true
-        }
-    });
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax();
-        for (var i = 0; i < all.length; ++i)
-            all[i].SourceElement().parentNode.className += ' has-jax';
-    });
-</script>
-<script src="//cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
 </body>
 </html>
