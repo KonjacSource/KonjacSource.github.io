@@ -24,7 +24,7 @@
 <meta property="og:description" content="本文主要给有计算机背景(起码懂一门强类型编程语言, 如果读者懂函数式编程或者 Rust 就更好了)的人介绍一下 Lean4 (作为一个编程语言而不是证明助手). 环境配置不在本文介绍范围内, 请参考https:&#x2F;&#x2F;lean-lang.org&#x2F;lean4&#x2F;doc&#x2F;setup.html. 另外由于markdown缺少 Lean 的高亮, 我们会借用一些其他语言的高亮, 但文中的代码除特殊注明">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-25T11:42:45.000Z">
-<meta property="article:modified_time" content="2023-11-27T14:28:18.914Z">
+<meta property="article:modified_time" content="2023-11-27T14:56:02.179Z">
 <meta property="article:author" content="KonjacSource">
 <meta property="article:tag" content="编程">
 <meta property="article:tag" content="计算机">
@@ -481,11 +481,11 @@ API的设计者可能对此感兴趣.</p>
 没法保证我们这里所谓的语序安全(实际上 Haskell
 可以用一些非常的技巧做到这点).</p>
 <p>我们可以组合一个过程</p>
-<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> <span class="hljs-keyword">proc</span> : <span class="hljs-type">DoorCmd</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">Unit</span> :=<br>  bind (<span class="hljs-type">GenKey</span> <span class="hljs-string">&quot;admin&quot;</span>) $ fun key =&gt;<br>  bind (<span class="hljs-type">Unlock</span> key) $ fun _ =&gt;<br>  bind <span class="hljs-type">Open</span>  $ fun _ =&gt;<br>  bind <span class="hljs-type">Close</span> $ fun _ =&gt;<br>  bind <span class="hljs-type">Lock</span>  $ fun _ =&gt;<br>  pure ()<br></code></pre></td></tr></table></figure>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> <span class="hljs-keyword">proc</span> : <span class="hljs-type">DoorCmd</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">Unit</span> :=<br>  bind (<span class="hljs-type">GenKey</span> <span class="hljs-string">&quot;admin&quot;</span>) fun key =&gt;<br>  bind (<span class="hljs-type">Unlock</span> key) fun _ =&gt;<br>  bind <span class="hljs-type">Open</span>  fun _ =&gt;<br>  bind <span class="hljs-type">Close</span> fun _ =&gt;<br>  bind <span class="hljs-type">Lock</span>  fun _ =&gt;<br>  pure ()<br></code></pre></td></tr></table></figure>
 <p>这个过程可以理解作: "一个人使用'admin'作为名字申请了一个钥匙,
 用它开了锁, 然后打开了门, 又关上了门,
 最后锁上了门",我们看一下如果他忘记了关门而直接在开门后锁门会发生什么,</p>
-<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> <span class="hljs-keyword">proc</span> : <span class="hljs-type">DoorCmd</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">Unit</span> :=<br>  bind (<span class="hljs-type">GenKey</span> <span class="hljs-string">&quot;admin&quot;</span>) $ fun key =&gt;<br>  bind (<span class="hljs-type">Unlock</span> key) $ fun _ =&gt;<br>  bind <span class="hljs-type">Open</span>  $ fun _ =&gt;<br>  bind <span class="hljs-type">Lock</span>  $ fun _ =&gt;<br>  pure ()<br><br><span class="hljs-comment">-- application type mismatch</span><br><span class="hljs-comment">--   DoorCmd.bind Lock</span><br><span class="hljs-comment">-- argument</span><br><span class="hljs-comment">--   Lock</span><br><span class="hljs-comment">-- has type</span><br><span class="hljs-comment">--   DoorCmd (SClosed ?m.21251) SLocked Unit : Type 1</span><br><span class="hljs-comment">-- but is expected to have type</span><br><span class="hljs-comment">--   DoorCmd (SOpen key) ?m.21247 ?m.21248 : Type 1</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">def</span> <span class="hljs-keyword">proc</span> : <span class="hljs-type">DoorCmd</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">SLocked</span> <span class="hljs-type">Unit</span> :=<br>  bind (<span class="hljs-type">GenKey</span> <span class="hljs-string">&quot;admin&quot;</span>) fun key =&gt;<br>  bind (<span class="hljs-type">Unlock</span> key) fun _ =&gt;<br>  bind <span class="hljs-type">Open</span> fun _ =&gt;<br>  bind <span class="hljs-type">Lock</span> fun _ =&gt;<br>  pure ()<br><br><span class="hljs-comment">-- application type mismatch</span><br><span class="hljs-comment">--   DoorCmd.bind Lock</span><br><span class="hljs-comment">-- argument</span><br><span class="hljs-comment">--   Lock</span><br><span class="hljs-comment">-- has type</span><br><span class="hljs-comment">--   DoorCmd (SClosed ?m.21251) SLocked Unit : Type 1</span><br><span class="hljs-comment">-- but is expected to have type</span><br><span class="hljs-comment">--   DoorCmd (SOpen key) ?m.21247 ?m.21248 : Type 1</span><br></code></pre></td></tr></table></figure>
 <p>Lean 提示了如上注释中的错误, 这个错误提示告诉我们: <code>Lock</code>
 是一个从关着的门到锁着的门的一个过程,
 但这里需要的是一个从开着的门到某个状态的过程.</p>
@@ -896,21 +896,5 @@ class="uri">https://lean-lang.org/functional_programming_in_lean/</a>,
   <noscript>
     <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
   </noscript>
-<script type="text/x-mathjax-config">
-    MathJax.Hub.Config({
-        tex2jax: {
-            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
-            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-            processEscapes: true
-        }
-    });
-    MathJax.Hub.Queue(function() {
-        var all = MathJax.Hub.getAllJax();
-        for (var i = 0; i < all.length; ++i)
-            all[i].SourceElement().parentNode.className += ' has-jax';
-    });
-</script>
-<script src="//cdn.bootcss.com/mathjax/2.7.3/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-
 </body>
 </html>
