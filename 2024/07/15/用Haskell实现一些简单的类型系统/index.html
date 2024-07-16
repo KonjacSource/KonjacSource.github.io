@@ -24,7 +24,7 @@
 <meta property="og:description" content="总所周知, 类型论的操作语义可以用一堆写成大横线的规则来表示, 这篇文章会教你如何把大横线转换成haskell代码. 先从STLC开始, 首先是两颗语法树, 一个代表项, 一个代表类型, 12345678910type Id &#x3D; Stringdata Type &#x3D; Int | Type :-&gt; Type  deriving (Show, Eq)data Term &#x3D; Lam Id Ty">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-07-14T16:04:08.000Z">
-<meta property="article:modified_time" content="2024-07-16T14:50:07.780Z">
+<meta property="article:modified_time" content="2024-07-16T14:58:04.523Z">
 <meta property="article:author" content="KonjacSource">
 <meta property="article:tag" content="Haskell">
 <meta property="article:tag" content="编程">
@@ -268,8 +268,8 @@
 <p>非常简单, 现在实现一下类型检查.</p>
 <p>我们随便抽一个 STLC 的 typing rule 看一看,</p>
 <p><span class="math display">\[
-  \frac{\Gamma \vdash f:A\to B\quad \Gamma \vdash x: A}{\Gamma\vdash f \
-x : B}
+  \dfrac{\Gamma \vdash f : A\to B\quad \Gamma \vdash x : A}{\Gamma\vdash
+f \ x : B}
 \]</span></p>
 <p>可以看到赋型谓词 _⊢_:_ 有三个槽, 前两个槽可以看作输入,
 最后一个槽是输出,
@@ -322,7 +322,7 @@ class="uri">https://github.com/KonjacSource/RuleNotation</a>.</p>
 <p>依值类型里面涉及到的判定相等相关的规则就不能直接转换成代码,
 比如传递性规则,</p>
 <p><span class="math display">\[
-  \frac{A \equiv B \quad B \equiv C }{A \equiv C}
+  \dfrac{A \equiv B \quad B \equiv C }{A \equiv C}
 \]</span></p>
 <p>这类规则若想搜索需要枚举B, 这太恐怖了. 补救方法是比较两者的normal
 form. 于是有如下的代码,</p>
