@@ -24,7 +24,7 @@
 <meta property="og:description" content="那一天, 类型论说:&quot;我来事了&quot;, 自那时起, 我便知道 coverage check 的重要性 近日写完了 ShiTT 的 coverage check, 我已经几乎可以声称我实现了一个定理证明器了, 虽然有些许 bug. 但瑕不掩瑕, 我觉得我还是很棒的. Coverage check 是确保模式匹配安全的重要机制, 确保你的模式不会侧漏. 虽然我觉得这篇文章的有效读者(如果他们存">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-09-05T14:04:08.000Z">
-<meta property="article:modified_time" content="2024-09-05T14:44:14.950Z">
+<meta property="article:modified_time" content="2024-09-05T14:44:46.411Z">
 <meta property="article:author" content="KonjacSource">
 <meta property="article:tag" content="Haskell">
 <meta property="article:tag" content="编程">
@@ -287,7 +287,7 @@ check.</p>
 <h3 id="非依赖">非依赖</h3>
 <p>还是先考虑非依赖的情况, 比如上例中的 <code>add</code>.
 检查侧漏的思路就是化身侧漏物, 把胴体(模式)的每一个岔路都走一遍,
-知道找到出口(遗漏的模式), 如果所有岔路都通向死路,
+直到找到出口(遗漏的模式), 如果所有岔路都通向死路,
 那么说明你的模式很严实, 不会侧漏. 反之就把这个岔路输出成一个警告,
 并大声嘲笑你侧漏了.</p>
 <p>比喻修辞不利于读者理解, 我们借助例子详细描述一下, 看 <code>add</code>
