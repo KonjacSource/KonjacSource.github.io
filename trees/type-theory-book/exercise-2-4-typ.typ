@@ -1,4 +1,7 @@
-#import "/trees/typst/prelude.typ" : *
+#set page(width: auto, height: auto, margin: (x: 0.1em, y: 0em), fill: rgb(0, 0, 0, 0)); 
+#set text(size: 13.2pt, top-edge: "bounds", bottom-edge: "bounds");
+
+#import "/typst/prelude.typ" : *
 *Excercise 2.4* 给定 $Δ ⊢ 𝛾 : Γ$ 和 $Γ ⊢ A "type"$, 构造一个替换记作 $𝛾.A$, 满足 $Δ.A[𝛾] ⊢ 𝛾.A : Γ.A$. 
 
 解.
