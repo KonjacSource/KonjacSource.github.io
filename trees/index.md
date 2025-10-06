@@ -1,6 +1,6 @@
 
 ---
-title: index
+title: index!
 ---
 
 WOWOOOOOO
