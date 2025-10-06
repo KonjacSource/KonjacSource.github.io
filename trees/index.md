@@ -1,6 +1,7 @@
 
 ---
-title: index!
+title: 粪海狂蛆
 ---
 
-WOWOOOOOO!!!
+[+-](/type-theory-book/index.md#:embed)
+
