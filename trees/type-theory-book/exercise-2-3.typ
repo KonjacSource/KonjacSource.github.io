@@ -1,5 +1,5 @@
-#import "/trees/typst/shared.typ" : *
-#import "/trees/typst/prelude.typ" : *
+#import "/typst/shared.typ" : *
+#import "/typst/prelude.typ" : *
 
 #show: start
 
