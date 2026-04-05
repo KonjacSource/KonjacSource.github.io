@@ -37,18 +37,18 @@ $
 and the evaluation environment should be,
 
 $
-  x |→ x , h |→ h
+  x |-> x , h |-> h
 $
 
 If $*$ is the constructor pattern $refl$, then the evaluation environment should be,
 
 $
-  x |→ 0  
+  x |-> 0  
 $
 
 #let Value = $bold("Value")$
 
-Then all the occurences of $x$ in RHS will directly evaluate to $0$. But this approach comes with a problem: this kind of unification will break the wellformedness of the evaluation environment. The evaluation environment stores the values of all variables. And the #Value type can be considered as a representation for the normal forms. We changed the value of $x$ from a variable to an other value, which might make some of other variables that depends on $x$ to be ill-formed. e.g. if there is a variable $y |→ x + 1$ in the evaluation environment, after we change $x$ to $0$, the value of $y$ will be $0 + 1$, which is not a normal form, which will make other variables depend on $y$ also ill-formed, and so on. 
+Then all the occurences of $x$ in RHS will directly evaluate to $0$. But this approach comes with a problem: this kind of unification will break the wellformedness of the evaluation environment. The evaluation environment stores the values of all variables. And the #Value type can be considered as a representation for the normal forms. We changed the value of $x$ from a variable to an other value, which might make some of other variables that depends on $x$ to be ill-formed. e.g. if there is a variable $y |-> x + 1$ in the evaluation environment, after we change $x$ to $0$, the value of $y$ will be $0 + 1$, which is not a normal form, which will make other variables depend on $y$ also ill-formed, and so on. 
 
 == A Better Solution
 
@@ -58,7 +58,7 @@ A workaround for this problem is to update the environment every time we need to
 #let Env = $bold("Env")$
 #let Lvl = $bold("Lvl")$
 
-For example, we have a well-formed evaluation environment $E$, such that $(x |→ x) in E$. And we have a unification assignment $x = v$ where $v$ is a value. We have shown that directly substituting $v$ for $x$ in $E$ will fail. Instead, we introduce a new operation, I call it $updVal$ 
+For example, we have a well-formed evaluation environment $E$, such that $(x |-> x) in E$. And we have a unification assignment $x = v$ where $v$ is a value. We have shown that directly substituting $v$ for $x$ in $E$ will fail. Instead, we introduce a new operation, I call it $updVal$ 
 #let eval = $bold("eval")$
 #let quote = $bold("quote")$
 
@@ -69,32 +69,32 @@ $
 
 Here $Env^!$ implies that the environment need *not* to be well-formed. There might be a smarter way to implement $updVal$ without quoting it back, but let us just use this for now.
 
-One can imagine #updVal as a substitution operation on #Value. e.g. $updVal" "(E[x |→ v])" "t = t [v \/ x]$, here $E [x |→ v]$ is the naive substitution of $v$ for $x$ in the environment $E$ (which, as we have seen, is not well-formed).
+One can imagine #updVal as a substitution operation on #Value. e.g. $updVal" "(E[x |-> v])" "t = t [v \/ x]$, here $E [x |-> v]$ is the naive substitution of $v$ for $x$ in the environment $E$ (which, as we have seen, is not well-formed).
 
 #let updEnv = $bold("updateEnv")$
 
-Then, we can map $updVal" "(E [x |→ v])$ to every value in $E [x |→ v]$. We call this operation $updEnv$.
+Then, we can map $updVal" "(E [x |-> v])$ to every value in $E [x |-> v]$. We call this operation $updEnv$.
 
 $
   &updEnv : Env^! → Env\
   &updEnv" "e n v = "map" (updVal ("length" e n v))" "e n v
 $
 
-Thus we obtain $E' := updEnv (E[x |→ v])$. Is $E'$ well-formed and is it the environment we want?
+Thus we obtain $E' := updEnv (E[x |-> v])$. Is $E'$ well-formed and is it the environment we want?
 
 The answer is yes. 
 
 We can define the ill-formedness of an environment with a level parameter. For a value $v$ under an environment $E$, if for any free variable $x$ in $v$, $eval E" "x = x$, we say $v$ is well-formed or say it is $0$-ill-formed. If there is a free variable $x$ in $v$ such that $eval E" "x = v'$ and $v'$ is $n$-ill-formed, then we say $v$ is $(n + 1)$-ill-formed. An environment is $n$-ill-formed if it contains a value that is $n$-ill-formed. For example, 
 
 $
-  &"well-formed:  "  x |→ x, y |→ x + 1\
-  &"1-ill-formed:  " x |→ 0, y |→ x + 1\
-  &"2-ill-formed:  " x |→ 0, y |→ x + 1, z |→ y + 1
+  &"well-formed:  "  x |-> x, y |-> x + 1\
+  &"1-ill-formed:  " x |-> 0, y |-> x + 1\
+  &"2-ill-formed:  " x |-> 0, y |-> x + 1, z |-> y + 1
 $
 
 We can prove that if $E$ is $n+1$-ill-formed, then $updEnv E$ is $n$-ill-formed.
 
-If $E$ is well-formed, and $eval E" "x = x$ and there are some other variables in $E$ depending on $x$, then it is easy to see that $E [x |→ v]$ is $1$-ill-formed. And after applying $updEnv$ on it we get a well-formed environment.
+If $E$ is well-formed, and $eval E" "x = x$ and there are some other variables in $E$ depending on $x$, then it is easy to see that $E [x |-> v]$ is $1$-ill-formed. And after applying $updEnv$ on it we get a well-formed environment.
 
 Let us rewrite the type of $updEnv$ to make it more clear,
 
