@@ -1,0 +1,185 @@
+#import "../_lib/prelude.typ": *
+#import "../_lib/kodama.typ": *
+#import "@preview/color-my-agda:0.2.0": init-color-my-agda
+
+#show: init-color-my-agda
+
+#show: kodama
+
+#metadata((
+  "title": "A Way to Implement Dependent Pattern Matching with Normalization by Evaluation",
+  "date": "Apr. 6. 2026",
+  "tag": local("/blog/index"),
+))
+
+#let refl = $bold("refl")$
+#let Id = $bold("Id")$
+
+In my final year of college, I was working on a toy project named #link("https://github.com/KonjacSource/ShiTT2")[ShiTT] (I rewrote it completely half a year ago), which is a dependent type checker in Agda style based on András Kovács' #link("https://github.com/AndrasKovacs/elaboration-zoo")[elaboration-zoo], with dependent pattern matching (DPM) support. And I feel that I need to write a blog post to share some of the interesting ideas I came up.
+
+One of the challenging problems I encountered was how to implement DPM in NbE settings. As we know, implementing DPM needs to unify the terms $u$ and $v$ when matching the pattern #refl against the type $Id(u, v)$. This process is to build a substitution and apply it to the body of the pattern matching. However, in NbE implementations, we usually have no simple way to substitute. 
+
+== A Naive Solution
+
+Take #link("https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn")[elaboration-zoo/02-typecheck-closures-debruijn] for instance, there is an evaluation environment where contains the values of all variables. An intuitive way to do DPM is to modify the evaluation environment by changing the value of the unified variable. For example,
+
+$
+  &f : (x : NN) → Id x" "0 → ...\ 
+  &f" "x" "* = "" ?_1
+$
+
+If the placeholder $*$ is a variable pattern $h$, the type checking context of $?_1$ should be,
+
+$
+  x : NN, h : Id x 0
+$ 
+
+and the evaluation environment should be,
+
+$
+  x |→ x , h |→ h
+$
+
+If $*$ is the constructor pattern $refl$, then the evaluation environment should be,
+
+$
+  x |→ 0  
+$
+
+#let Value = $bold("Value")$
+
+Then all the occurences of $x$ in RHS will directly evaluate to $0$. But this approach comes with a problem: this kind of unification will break the wellformedness of the evaluation environment. The evaluation environment stores the values of all variables. And the #Value type can be considered as a representation for the normal forms. We changed the value of $x$ from a variable to an other value, which might make some of other variables that depends on $x$ to be ill-formed. e.g. if there is a variable $y |→ x + 1$ in the evaluation environment, after we change $x$ to $0$, the value of $y$ will be $0 + 1$, which is not a normal form, which will make other variables depend on $y$ also ill-formed, and so on. 
+
+== A Better Solution
+
+A workaround for this problem is to update the environment every time we need to unify two terms. 
+
+#let updVal = $bold("updateVal")$
+#let Env = $bold("Env")$
+#let Lvl = $bold("Lvl")$
+
+For example, we have a well-formed evaluation environment $E$, such that $(x |→ x) in E$. And we have a unification assignment $x = v$ where $v$ is a value. We have shown that directly substituting $v$ for $x$ in $E$ will fail. Instead, we introduce a new operation, I call it $updVal$ 
+#let eval = $bold("eval")$
+#let quote = $bold("quote")$
+
+$
+  &updVal : Env^! → Value → Value\
+  &updVal" "e n v" "v = eval e n v" "(quote ("length" e n v)" "v)
+$
+
+Here $Env^!$ implies that the environment need *not* to be well-formed. There might be a smarter way to implement $updVal$ without quoting it back, but let us just use this for now.
+
+One can imagine #updVal as a substitution operation on #Value. e.g. $updVal" "(E[x |→ v])" "t = t [v \/ x]$, here $E [x |→ v]$ is the naive substitution of $v$ for $x$ in the environment $E$ (which, as we have seen, is not well-formed).
+
+#let updEnv = $bold("updateEnv")$
+
+Then, we can map $updVal" "(E [x |→ v])$ to every value in $E [x |→ v]$. We call this operation $updEnv$.
+
+$
+  &updEnv : Env^! → Env\
+  &updEnv" "e n v = "map" (updVal ("length" e n v))" "e n v
+$
+
+Thus we obtain $E' := updEnv (E[x |→ v])$. Is $E'$ well-formed and is it the environment we want?
+
+The answer is yes. 
+
+We can define the ill-formedness of an environment with a level parameter. For a value $v$ under an environment $E$, if for any free variable $x$ in $v$, $eval E" "x = x$, we say $v$ is well-formed or say it is $0$-ill-formed. If there is a free variable $x$ in $v$ such that $eval E" "x = v'$ and $v'$ is $n$-ill-formed, then we say $v$ is $(n + 1)$-ill-formed. An environment is $n$-ill-formed if it contains a value that is $n$-ill-formed. For example, 
+
+$
+  &"well-formed:  "  x |→ x, y |→ x + 1\
+  &"1-ill-formed:  " x |→ 0, y |→ x + 1\
+  &"2-ill-formed:  " x |→ 0, y |→ x + 1, z |→ y + 1
+$
+
+We can prove that if $E$ is $n+1$-ill-formed, then $updEnv E$ is $n$-ill-formed.
+
+If $E$ is well-formed, and $eval E" "x = x$ and there are some other variables in $E$ depending on $x$, then it is easy to see that $E [x |→ v]$ is $1$-ill-formed. And after applying $updEnv$ on it we get a well-formed environment.
+
+Let us rewrite the type of $updEnv$ to make it more clear,
+
+$
+  updEnv : Env^(!n+1) → Env^(!n)
+$
+
+Where $!n$ indicates the level of ill-formedness.
+
+And also, don't forget to using the updated environment to update all the types in type checking context as well.
+
+== A Limitation of Dependent Pattern Matching
+
+This approach comes with an efficiency problem. Every time we need to unify two terms, we re-evaluate the whole environment, which is quite expensive. A workaround is to limit the length of the context. One can write the following Agda code,
+
+```agda
+
+module M (x : Nat) where 
+
+  f : Id x 0 → ... 
+  f refl = ...
+
+
+```
+
+A function has ability to unify the outer module variable $x$. We can limit the ability of dependent pattern matching in ShiTT by only allowing it to unify the variables that are introduced in the current function (Well, I haven't done it yet). So we rewrite the above code as,
+
+```agda 
+
+module M (x : Nat) where 
+
+  f' : (x : Nat) → Id x 0 → ...
+  f' x refl = ...
+
+  f = f' x
+
+```
+
+For a language with match expressions support, there is an extra reason to do this restriction. 
+
+If we have the following data type,
+
+```agda
+data T : Set → Set where 
+  C : T Bool 
+```
+
+And we have a function with a match expression,
+
+```agda
+f : (A : Set) → T A → A 
+f A = λ t → match t with 
+            | C => true -- here A = Bool
+```
+
+And we can define, 
+
+```agda
+g1, g2 : T Nat → Nat 
+g1 = f Nat
+
+g2 = λ t → match t with 
+           | C => true
+```
+
+`g1` is well-typed, while `g2` is not, 
+but one can find that `g2 = f A [Nat / A] = g1`. Substitution does not preserve typing!
+
+The solution is as same as before, we limit the ability of dependent pattern matching by requiring all the unifying variables must in match expressions.
+So the above code will be rewritten as,
+
+```agda
+f A = λ t → match A , t with
+            | .Bool , C => true
+```
+
+After that, `g2 ≠ f A [Nat / A]` anymore, and it is not well-typed as expected.
+
+All though Agda have no native support for match expressions, #link("https://github.com/agda/agda/issues/8192")[but it has lambda-case expressions which lead to the same problem.] But seems they consider the lambda-case is a syntactic sugar for top-level pattern matching, which means the substitution is still type-preserving for Agda expressions (Since there is no pattern matching in Agda expressions).
+
+Upon those two reasons, I think it might be a good idea to limit the ability of dependent pattern matching. 
+
+== References
+
+- #link("https://github.com/KonjacSource/ShiTT2")[me🫡. ShiTT]
+- #link("https://github.com/AndrasKovacs/elaboration-zoo")[András Kovács. elaboration-zoo]
+- #link("https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf")[Ulf Norell. Towards a practical programming language based on dependent type theory]
+- #link("https://jesper.sikanda.be/files/elaborating-dependent-copattern-matching.pdf")[Jesper Cockx and Andreas Abel. Elaborating Dependent (Co)pattern Matching]
