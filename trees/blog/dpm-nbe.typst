@@ -15,13 +15,13 @@
 #let refl = $bold("refl")$
 #let Id = $bold("Id")$
 
-In my final year of college, I was working on a toy project named #link("https://github.com/KonjacSource/ShiTT2")[ShiTT] (I rewrote it completely half a year ago), which is a dependent type checker in Agda style based on András Kovács' #link("https://github.com/AndrasKovacs/elaboration-zoo")[elaboration-zoo], with dependent pattern matching (DPM) support. And I feel that I need to write a blog post to share some of the interesting ideas I came up.
+In my final year of college, I was working on a toy project named #external("https://github.com/KonjacSource/ShiTT2")[ShiTT] (I rewrote it completely half a year ago), which is a dependent type checker in Agda style based on András Kovács' #external("https://github.com/AndrasKovacs/elaboration-zoo")[elaboration-zoo], with dependent pattern matching (DPM) support. And I feel that I need to write a blog post to share some of the interesting ideas I came up.
 
 One of the challenging problems I encountered was how to implement DPM in NbE settings. As we know, implementing DPM needs to unify the terms $u$ and $v$ when matching the pattern #refl against the type $Id(u, v)$. This process is to build a substitution and apply it to the body of the pattern matching. However, in NbE implementations, we usually have no simple way to substitute. 
 
 == A Naive Solution
 
-Take #link("https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn")[elaboration-zoo/02-typecheck-closures-debruijn] for instance, there is an evaluation environment where contains the values of all variables. An intuitive way to do DPM is to modify the evaluation environment by changing the value of the unified variable. For example,
+Take #external("https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn")[elaboration-zoo/02-typecheck-closures-debruijn] for instance, there is an evaluation environment where contains the values of all variables. An intuitive way to do DPM is to modify the evaluation environment by changing the value of the unified variable. For example,
 
 $
   &f : (x : NN) → Id x" "0 → ...\ 
@@ -134,7 +134,7 @@ module M (x : Nat) where
 ```
 
 For a language with match expressions support, there is an extra reason to do this restriction. 
-#link("https://yanningchen.me")[LightQuantum] occurred this to me. 
+#external("https://yanningchen.me")[LightQuantum] occurred this to me. 
 
 If we have the following data type,
 
@@ -174,13 +174,13 @@ f A = λ t → match A , t with
 
 After that, `g2 ≠ f A [Nat / A]` anymore, and it is not well-typed as expected.
 
-All though Agda have no native support for match expressions, #link("https://github.com/agda/agda/issues/8192")[but it has lambda-case expressions which lead to the same problem.] But seems they consider the lambda-case is a syntactic sugar for top-level pattern matching, which means the substitution is still type-preserving for Agda expressions (Since there is no pattern matching in Agda expressions).
+All though Agda have no native support for match expressions, #external("https://github.com/agda/agda/issues/8192")[but it has lambda-case expressions which lead to the same problem.] But seems they consider the lambda-case is a syntactic sugar for top-level pattern matching, which means the substitution is still type-preserving for Agda expressions (Since there is no pattern matching in Agda expressions).
 
 Upon those two reasons, I think it might be a good idea to limit the ability of dependent pattern matching. 
 
 == References
 
-- #link("https://github.com/KonjacSource/ShiTT2")[me🫡. ShiTT]
-- #link("https://github.com/AndrasKovacs/elaboration-zoo")[András Kovács. elaboration-zoo]
-- #link("https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf")[Ulf Norell. Towards a practical programming language based on dependent type theory]
-- #link("https://jesper.sikanda.be/files/elaborating-dependent-copattern-matching.pdf")[Jesper Cockx and Andreas Abel. Elaborating Dependent (Co)pattern Matching]
+- #external("https://github.com/KonjacSource/ShiTT2")[me🫡. ShiTT]
+- #external("https://github.com/AndrasKovacs/elaboration-zoo")[András Kovács. elaboration-zoo]
+- #external("https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf")[Ulf Norell. Towards a practical programming language based on dependent type theory]
+- #external("https://jesper.sikanda.be/files/elaborating-dependent-copattern-matching.pdf")[Jesper Cockx and Andreas Abel. Elaborating Dependent (Co)pattern Matching]
