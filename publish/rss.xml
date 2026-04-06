@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>KonjacSource Blog</title>
+    <link>https://konjacsource.github.io/</link>
+    <description>Recent posts from KonjacSource</description>
+    <language>zh-cn</language>
+    <lastBuildDate>Mon, 06 Apr 2026 00:00:00 +0800</lastBuildDate>
+    <atom:link href="https://konjacsource.github.io/rss.xml" rel="self" type="application/rss+xml" />
+
+    <item>
+      <title>A Way to Implement Dependent Pattern Matching with Normalization by Evaluation</title>
+      <link>https://konjacsource.github.io/blog/dpm-nbe.html</link>
+      <guid isPermaLink="true">https://konjacsource.github.io/blog/dpm-nbe.html</guid>
+      <pubDate>Mon, 06 Apr 2026 00:00:00 +0800</pubDate>
+      <description>Dependent Pattern Matching in NbE settings.</description>
+    </item>
+
+    <item>
+      <title>一种在 NbE 中实现依赖模式匹配的方法</title>
+      <link>https://konjacsource.github.io/blog/zh/dpm-nbe.html</link>
+      <guid isPermaLink="true">https://konjacsource.github.io/blog/zh/dpm-nbe.html</guid>
+      <pubDate>Mon, 06 Apr 2026 00:00:00 +0800</pubDate>
+      <description>中文翻译版：Dependent Pattern Matching in NbE settings.</description>
+    </item>
+  </channel>
+</rss>
