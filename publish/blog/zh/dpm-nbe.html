@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en-US"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width"><title>一种在 NbE 中实现依赖模式匹配的方法</title><link rel="icon" href="/assets/favicon.ico" /><script>
+  function toggleDetailsOpen() {
+    const details = document.querySelector("#toc>div>details");
+    if (!details) return;
+
+    if (window.matchMedia("(max-width: 1000px)").matches) {
+      details.removeAttribute("open");
+    } else {
+      details.setAttribute("open", "");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", toggleDetailsOpen);
+  window.addEventListener("resize", toggleDetailsOpen);
+</script><style>
+  theme-option {
+    display: inline-block;
+  }
+
+  theme-option>input {
+    display: none;
+  }
+
+  theme-option>label {
+    color: var(--slug-color);
+  }
+
+  theme-option>label:hover {
+    background-color: var(--hover-color-link);
+  }
+
+  theme-option:has(input:checked)>label {
+    color: var(--link-color);
+  }
+
+  theme-option>label::before {
+    content: "[";
+    color: rgba(0, 0, 0, 0);
+  }
+
+  theme-option>label::after {
+    content: "]";
+    color: rgba(0, 0, 0, 0);
+  }
+
+  theme-option:has(input:checked)>label::before {
+    color: var(--link-color);
+  }
+
+  theme-option:has(input:checked)>label::after {
+    color: var(--link-color);
+  }
+</style>
+
+<template id="theme-option-template">
+  <input type="radio" name="theme" />
+  <label></label>
+</template>
+
+<script>
+  const THEME_KEY = `kodama-theme`;
+
+  function storeSelectedTheme(name) {
+    localStorage.setItem(THEME_KEY, name);
+  }
+
+  function getCurrentTheme() {
+    return localStorage.getItem(THEME_KEY) || window.primaryTheme;
+  }
+
+  function selectTheme(themeName) {
+    storeSelectedTheme(themeName);
+    requestAnimationFrame(applyDynamicColorInvert);
+  }
+
+  function applyFavorTheme() {
+    const favoredTheme = getCurrentTheme();
+    if (favoredTheme) {
+      const selector = `input[type='radio'][id='${favoredTheme}']`;
+      const favoredOption = window.themeOptions.querySelector(selector);
+
+      if (favoredOption) {
+        favoredOption.checked = true;
+      } else if (window.primaryOption) {
+        // Fallback to primary theme, if the favored theme is not found
+        // e.g., when the theme options have changed, and the stored theme is no longer available.
+        window.primaryOption.checked = true;
+      }
+    }
+    applyDynamicColorInvert();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    window.themeOptions = document.getElementById("theme-options");
+    const templateContent = document.getElementById("theme-option-template").content;
+
+    customElements.define(
+      "theme-option",
+      class extends HTMLElement {
+        constructor() {
+          super();
+
+          const node = templateContent.cloneNode(true);
+          const themeName = this.getAttribute("name");
+
+          const input = node.querySelector("input");
+          input.setAttribute("id", themeName);
+          input.setAttribute("value", themeName);
+
+          const label = node.querySelector("label");
+          label.setAttribute("for", themeName);
+          label.addEventListener("click", () => selectTheme(themeName));
+
+          while (this.firstChild) {
+            label.appendChild(this.firstChild);
+          }
+          this.appendChild(node);
+        }
+      },
+    );
+
+    window.primaryOption = window.themeOptions.querySelector("input[type='radio']");
+    window.primaryTheme = primaryOption?.value;
+
+    applyFavorTheme();
+  });
+</script>
+
+<script>
+  const clamp = (value) => Math.max(0, Math.min(255, value));
+
+  const multiply = ([r, g, b], matrix) => {
+    const nr = clamp(r * matrix[0] + g * matrix[1] + b * matrix[2]);
+    const ng = clamp(r * matrix[3] + g * matrix[4] + b * matrix[5]);
+    const nb = clamp(r * matrix[6] + g * matrix[7] + b * matrix[8]);
+    return [nr, ng, nb];
+  };
+
+  const hueRotate = ([r, g, b], angle = 0) => {
+    const rad = (angle / 180) * Math.PI;
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
+    const matrix = [
+      0.213 + cos * 0.787 - sin * 0.213,
+      0.715 - cos * 0.715 - sin * 0.715,
+      0.072 - cos * 0.072 + sin * 0.928,
+      0.213 - cos * 0.213 + sin * 0.143,
+      0.715 + cos * 0.285 + sin * 0.140,
+      0.072 - cos * 0.072 - sin * 0.283,
+      0.213 - cos * 0.213 - sin * 0.787,
+      0.715 - cos * 0.715 + sin * 0.715,
+      0.072 + cos * 0.928 + sin * 0.072,
+    ];
+    return multiply([r, g, b], matrix);
+  };
+
+  const grayscale = ([r, g, b], value = 1) => {
+    const matrix = [
+      0.2126 + 0.7874 * (1 - value),
+      0.7152 - 0.7152 * (1 - value),
+      0.0722 - 0.0722 * (1 - value),
+      0.2126 - 0.2126 * (1 - value),
+      0.7152 + 0.2848 * (1 - value),
+      0.0722 - 0.0722 * (1 - value),
+      0.2126 - 0.2126 * (1 - value),
+      0.7152 - 0.7152 * (1 - value),
+      0.0722 + 0.9278 * (1 - value),
+    ];
+    return multiply([r, g, b], matrix);
+  };
+
+  const sepia = ([r, g, b], value = 1) => {
+    const matrix = [
+      0.393 + 0.607 * (1 - value),
+      0.769 - 0.769 * (1 - value),
+      0.189 - 0.189 * (1 - value),
+      0.349 - 0.349 * (1 - value),
+      0.686 + 0.314 * (1 - value),
+      0.168 - 0.168 * (1 - value),
+      0.272 - 0.272 * (1 - value),
+      0.534 - 0.534 * (1 - value),
+      0.131 + 0.869 * (1 - value),
+    ];
+    return multiply([r, g, b], matrix);
+  };
+
+  const saturate = ([r, g, b], value = 1) => {
+    const matrix = [
+      0.213 + 0.787 * value,
+      0.715 - 0.715 * value,
+      0.072 - 0.072 * value,
+      0.213 - 0.213 * value,
+      0.715 + 0.285 * value,
+      0.072 - 0.072 * value,
+      0.213 - 0.213 * value,
+      0.715 - 0.715 * value,
+      0.072 + 0.928 * value,
+    ];
+    return multiply([r, g, b], matrix);
+  };
+
+  const linear = ([r, g, b], slope = 1, intercept = 0) => {
+    const scale = 255;
+    return [
+      clamp(r * slope + intercept * scale),
+      clamp(g * slope + intercept * scale),
+      clamp(b * slope + intercept * scale),
+    ];
+  };
+
+  const brightness = (rgb, value = 1) => linear(rgb, value);
+  const contrast = (rgb, value = 1) => linear(rgb, value, -0.5 * value + 0.5);
+
+  const invert = ([r, g, b], value = 1) => {
+    const nr = (value + r / 255 * (1 - 2 * value)) * 255;
+    const ng = (value + g / 255 * (1 - 2 * value)) * 255;
+    const nb = (value + b / 255 * (1 - 2 * value)) * 255;
+    return [clamp(nr), clamp(ng), clamp(nb)];
+  };
+
+  // Code taken from https://stackoverflow.com/a/9493060/2688027, licensed under CC BY-SA.
+  const rgbToHsl = (r, g, b) => {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: h * 100, s: s * 100, l: l * 100 };
+  };
+
+  const applyFilters = (rgb, [inv, sep, sat, hue, bri, con]) => {
+    let color = [...rgb];
+    color = invert(color, inv / 100);
+    color = sepia(color, sep / 100);
+    color = saturate(color, sat / 100);
+    color = hueRotate(color, hue * 3.6);
+    color = brightness(color, bri / 100);
+    color = contrast(color, con / 100);
+    return color;
+  };
+
+  const lossFn = (targetRgb, filters) => {
+    const resultRgb = applyFilters([0, 0, 0], filters);
+    const targetHsl = rgbToHsl(...targetRgb);
+    const resultHsl = rgbToHsl(...resultRgb);
+    return (
+      Math.abs(resultRgb[0] - targetRgb[0]) +
+      Math.abs(resultRgb[1] - targetRgb[1]) +
+      Math.abs(resultRgb[2] - targetRgb[2]) +
+      Math.abs(resultHsl.h - targetHsl.h) +
+      Math.abs(resultHsl.s - targetHsl.s) +
+      Math.abs(resultHsl.l - targetHsl.l)
+    );
+  };
+
+  const fix = (value, idx) => {
+    let max = 100;
+    if (idx === 2) max = 7500;                  // saturate
+    else if (idx === 4 || idx === 5) max = 200; // brightness, contrast
+    if (idx === 3) { // hue-rotate
+      if (value > max) return value % max;
+      if (value < 0) return max + (value % max);
+      return value;
+    }
+    return Math.max(0, Math.min(max, value));
+  };
+
+  const spsa = (targetRgb, A, a, c, initial, iters) => {
+    const alpha = 1;
+    const gamma = 1 / 6;
+    let values = [...initial];
+    let best = [...values];
+    let bestLoss = Infinity;
+
+    for (let k = 0; k < iters; k++) {
+      const ck = c / Math.pow(k + 1, gamma);
+      const deltas = Array(6).fill().map(() => (Math.random() > 0.5 ? 1 : -1));
+      const highArgs = values.map((v, i) => v + ck * deltas[i]);
+      const lowArgs = values.map((v, i) => v - ck * deltas[i]);
+      const lossDiff = lossFn(targetRgb, highArgs) - lossFn(targetRgb, lowArgs);
+
+      values = values.map((v, i) => {
+        const g = (lossDiff / (2 * ck)) * deltas[i];
+        const ak = a[i] / Math.pow(A + k + 1, alpha);
+        return fix(v - ak * g, i);
+      });
+
+      const loss = lossFn(targetRgb, values);
+      if (loss < bestLoss) {
+        best = [...values];
+        bestLoss = loss;
+      }
+    }
+    return { values: best, loss: bestLoss };
+  };
+
+  // Threshold for acceptable color loss. This value determines when the SPSA algorithm stops early.
+  // A loss below this value is considered visually indistinguishable for most use cases.
+  // The value 25 was determined empirically to balance performance and color accuracy.
+  const ACCEPTABLE_COLOR_LOSS = 25;
+
+  const solveWide = (targetRgb) => {
+    const A = 5;
+    const c = 15;
+    const a = [60, 180, 18000, 600, 1.2, 1.2];
+    let best = { loss: Infinity, values: null };
+    for (let i = 0; best.loss > ACCEPTABLE_COLOR_LOSS && i < 3; i++) {
+      const initial = [50, 20, 3750, 50, 100, 100];
+      const result = spsa(targetRgb, A, a, c, initial, 1000);
+      if (result.loss < best.loss) best = result;
+    }
+    return best;
+  };
+
+  const solveNarrow = (targetRgb, wideResult) => {
+    const A = wideResult.loss;
+    const c = 2;
+    const A1 = A + 1;
+    const a = [0.25 * A1, 0.25 * A1, A1, 0.25 * A1, 0.2 * A1, 0.2 * A1];
+    return spsa(targetRgb, A, a, c, wideResult.values, 500);
+  };
+
+  const cssFilterString = (filters) => {
+    const [inv, sep, sat, hue, bri, con] = filters.map(Math.round);
+    const hueDeg = Math.round(hue * 3.6);
+    return `filter: invert(${inv}%) sepia(${sep}%) saturate(${sat}%) hue-rotate(${hueDeg}deg) brightness(${bri}%) contrast(${con}%);`;
+  };
+
+  const solveColor = (targetRgb) => {
+    const wide = solveWide(targetRgb);
+    const narrow = solveNarrow(targetRgb, wide);
+    return {
+      values: narrow.values,
+      loss: narrow.loss,
+      filter: cssFilterString(narrow.values),
+    };
+  };
+
+  // Reuse a single canvas / context to avoid memory leaks
+  const colorParseCanvas = document.createElement('canvas');
+  colorParseCanvas.width = 1;
+  colorParseCanvas.height = 1;
+  const colorParseContext = colorParseCanvas.getContext('2d');
+
+  const toRGBArray = (cssColor) => {
+    colorParseContext.fillStyle = cssColor;
+    colorParseContext.fillRect(0, 0, 1, 1);
+
+    // The `getImageData().data` returns a Uint8ClampedArray with 4 values per pixel (RGBA). 
+    // also see: https://developer.mozilla.org/zh-CN/docs/Web/API/ImageData/data
+    const rgba = colorParseContext.getImageData(0, 0, 1, 1).data;
+    return Array.from(rgba.slice(0, 3));
+  };
+
+  const DYNAMIC_STYLE_ID = 'dynamic-color-invert-style';
+  const SOLVED_COLOR_KEY = "solved-";
+
+  function memorizedSolvedFilter(color) {
+    const colorKey = SOLVED_COLOR_KEY + color;
+    const storedFilterOption = localStorage.getItem(colorKey);
+    if (storedFilterOption) {
+      return storedFilterOption;
+    } else {
+      const filter = solveColor(color).filter;
+      localStorage.setItem(colorKey, filter);
+      return filter;
+    }
+  }
+
+  function applyDynamicColorInvert() {
+    const textColor = getComputedStyle(document.body).getPropertyValue('--text-color');
+    if (textColor && textColor.length > 0) {
+      const rgb = toRGBArray(textColor);
+      const filter = memorizedSolvedFilter(rgb);
+
+      const existingStyle = document.getElementById(DYNAMIC_STYLE_ID);
+      if (existingStyle) {
+        existingStyle.textContent = `.color-invert {${filter}}`;
+      } else {
+        const style = document.createElement('style');
+        style.id = DYNAMIC_STYLE_ID;
+        style.textContent = `.color-invert {${filter}}`;
+        document.head.appendChild(style);
+      }
+    }
+  }
+</script><script>
+  (() => {
+    const url = "/kodama.reload";
+    const interval = 1000; // 1 second
+
+    let lastVersion = null;
+
+    async function check() {
+      try {
+        const res = await fetch(url + "?t=" + Date.now(), { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error("reload marker not ready");
+        }
+        const version = (await res.text()).trim();
+        if (lastVersion && version && version !== lastVersion) {
+          location.reload();
+          return;
+        }
+        lastVersion = version || lastVersion;
+      } catch (e) {
+        // Ignore
+        console.warn("Reload check failed:", e);
+      }
+
+      setTimeout(check, interval);
+    }
+
+    check();
+  })();
+</script>
+<!-- Also see: https://katex.org/docs/autorender -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css" integrity="sha384-WcoG4HRXMzYzfCgiyfrySxx90XSl2rxY5mnVY5TwtWE6KLrArNKn0T/mOgNL0Mmi" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.js" integrity="sha384-J+9dG2KMoiR9hqcFao0IBLwxt6zpcyN68IgwzsCSkbreXUjmNVRhPFTssqdSGjwQ" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
+<!-- Also see: https://github.com/KaTeX/KaTeX/tree/main/contrib/copy-tex -->
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/contrib/copy-tex.min.js" integrity="sha384-HORx6nWi8j5/mYA+y57/9/CZc5z8HnEw4WUZWy5yOn9ToKBv1l58vJaufFAn9Zzi" crossorigin="anonymous"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    renderMathInElement(document.body, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true },
+      ],
+      trust: true,
+      strict: false,
+      throwOnError: false,
+      minRuleThickness: 0.05,
+    });
+  });
+</script>
+<style>html {
+  font-size: 18px;
+}
+
+:root body {
+  color-scheme: light dark;
+  --content-gap: 15px;
+  --radius: 5px;
+  --article-max-width: 90ex;
+  --toc-max-width: 90ex;
+  --text-font-family: "Inria Sans", sans-serif;
+  --kaiti-font-family: "KaiTi", "SimKai", "STKaiti", "Kaiti SC", "Kaiti TC", "华文楷体", "楷体", serif;
+
+  /* root font size: 16px */
+  /* 11pt; */
+  --pre-font-size: 0.917rem;
+  --code-font-size: 1rem;
+  /* If this value is not 1rem, the CJK text in Typst will not match the size of the CJK text in KaTeX. */
+  --katex-font-size: 1.15em;
+  --katex-frac-line-font-size: 1.25em;
+  --details-h1-font-size: 1.2rem;
+  /* 13pt */
+  --section-details-h1-font-size: 1.083rem;
+  --article-details-h1-font-size: 1.5rem;
+  /* 0.9em */
+  --article-details-h1-taxon-font-size: 1.35rem;
+  /* 24px; */
+  --logo-font-size: 1.5rem;
+  /* 14pt; */
+  --footer-h2-font-size: 1.167rem;
+  --p-line-height: 1.55rem;
+
+  --text-color: black;
+  --toc-link-color: #555;
+  --background-color: white;
+
+  --background-color-pre: rgba(0, 100, 100, 0.04);
+  --background-color-code: rgba(0, 100, 100, 0.04);
+
+  --hover-color-block: rgba(0, 100, 255, 0.04);
+  --hover-color-link: rgba(0, 100, 255, 0.1);
+  --target-color: rgb(67, 92, 255);
+
+  --link-color: black;
+  --slug-color: gray;
+  --logo-color: #666;
+  --logo-hover-color: #aaa;
+  --span-taxon-color: #444;
+  --article-taxon-color: #888;
+  --mark-color: rgb(255, 255, 151);
+  --em-color: var(--text-color);
+
+  --alert-border-color: gray;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root body {
+    --text-color: white;
+    --toc-link-color: white;
+    --background-color: #2f2f2f;
+
+    --background-color-pre: rgba(100, 100, 100, 0.2);
+    --background-color-code: rgba(150, 150, 150, 0.2);
+
+    --hover-color-block: rgba(100, 162, 255, 0.06);
+    --hover-color-link: rgba(100, 162, 255, 0.2);
+    --target-color: rgb(255, 255, 151);
+
+    --link-color: white;
+    --slug-color: #aeaeae;
+    --logo-color: #999;
+    --logo-hover-color: #eee;
+    --span-taxon-color: #bbb;
+  }
+}
+
+@media print {
+  html {
+    font-size: 16px;
+  }
+
+  .edit,
+  #theme-options {
+    display: none;
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+body {
+  color: var(--text-color);
+  font-optical-sizing: auto;
+  font-size: 1rem;
+  font-family: var(--text-font-family);
+  hyphens: auto;
+  background-color: var(--background-color);
+}
+
+pre,
+code {
+  font-optical-sizing: auto;
+}
+
+p,
+pre {
+  line-height: var(--p-line-height);
+}
+
+pre {
+  border-radius: var(--radius);
+  background-color: var(--background-color-pre);
+  padding: 0.5rem;
+  font-size: var(--pre-font-size);
+  margin-top: 0rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+code {
+  border-radius: var(--radius);
+  background-color: var(--background-color-code);
+  padding: 0.1rem;
+  font-size: var(--code-font-size);
+}
+
+pre,
+code {
+  font-family: monospace;
+}
+
+em {
+  color: var(--em-color);
+}
+
+table {
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+/* !forest */
+th {
+  font-weight: normal;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 0 15px;
+  vertical-align: top;
+}
+
+/* !forest */
+pre>code {
+  border-radius: 0;
+  background-color: transparent;
+  padding: 0;
+}
+
+/* !forest */
+.footnote-definition:last-child {
+  margin-bottom: 1rem;
+}
+
+/* !forest */
+.footnote-definition>p {
+  display: inline;
+}
+
+/* !forest */
+.footnote-definition-label {
+  margin-right: 4px;
+}
+
+/* !forest */
+.footnote-reference:target {
+  border: 1px solid var(--target-color);
+}
+
+.footnote-definition:target>.footnote-definition-label {
+  border: 1px solid var(--target-color);
+}
+
+.footnote-reference::before,
+.footnote-definition-label::before {
+  content: "[";
+}
+
+.footnote-reference::after,
+.footnote-definition-label::after {
+  content: "]";
+}
+
+.katex {
+  font: normal var(--katex-font-size) KaTeX_Main, Times New Roman, serif;
+  line-height: 1rem;
+  text-indent: 0;
+  text-rendering: auto;
+}
+
+.katex .mfrac .frac-line {
+  font-size: var(--katex-frac-line-font-size);
+}
+
+/* Generated by KaTeX */
+.cjk_fallback {
+  font-size: 1rem;
+  font-family: var(--text-font-family);
+}
+
+p:has(span.katex-html:empty) {
+  display: none;
+}
+
+section+p:empty {
+  display: none;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.katex-display .katex {
+  /* Inconsistent bounding box at different font sizes. */
+  /* Also see: https://github.com/KaTeX/KaTeX/issues/3965 */
+  padding-top: 1px;
+}
+
+.display-none {
+  display: none;
+}
+
+blockquote {
+  font-style: italic;
+  --blockquote-cjk-font-family: var(--kaiti-font-family);
+}
+
+blockquote span:is([lang=zh], [lang=ja], [lang=ko]) {
+  font-style: normal;
+  font-family: var(--blockquote-cjk-font-family);
+}
+
+/* GFM Blockquote tags: https://github.com/orgs/community/discussions/16925 */
+
+blockquote:is(.markdown-alert-note, .markdown-alert-tip, .markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution) {
+  --blockquote-cjk-font-family: var(--text-font-family);
+  margin: 0rem 0.5rem;
+  padding: 0rem 0.5rem;
+  font-style: normal;
+  border-left: .25rem double var(--alert-border-color);
+}
+
+blockquote:is(.markdown-alert-note, .markdown-alert-tip, .markdown-alert-important, .markdown-alert-warning, .markdown-alert-caution)>p:first-child::before {
+  font-size: var(--section-details-h1-font-size);
+  font-family: monospace;
+  color: var(--span-taxon-color);
+  margin-right: 0.5rem;
+  display: block;
+  content: var(--alert-label);
+}
+
+blockquote.markdown-alert-note {
+  --alert-label: "[# NOTE]";
+}
+
+blockquote.markdown-alert-tip {
+  --alert-label: "[# TIP]";
+}
+
+blockquote.markdown-alert-important {
+  --alert-label: "[# IMPORTANT]";
+}
+
+blockquote.markdown-alert-warning {
+  --alert-label: "[# WARNING]";
+}
+
+blockquote.markdown-alert-caution {
+  --alert-label: "[# CAUTION]";
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin-top: 0.5em;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 500;
+  margin-bottom: 0;
+}
+
+h5,
+h6,
+p {
+  margin-top: 0;
+}
+
+details>summary {
+  list-style-type: none;
+  outline: none;
+}
+
+details>summary>header {
+  display: inline;
+}
+
+details>summary::marker,
+details>summary::-webkit-details-marker {
+  display: none;
+}
+
+details h1 {
+  font-size: var(--details-h1-font-size);
+  display: inline;
+}
+
+span.taxon {
+  color: var(--span-taxon-color);
+  font-weight: 500;
+}
+
+article>section>details>summary>header>h1 {
+  font-size: var(--article-details-h1-font-size);
+}
+
+article>section>details>h2 {
+  font-size: 1.25rem;
+}
+
+article>section>details>h3 {
+  font-size: 1.125rem;
+}
+
+article>section>details>h4 {
+  font-size: 1rem;
+}
+
+article>section>details>h5,
+article>section>details>h6 {
+  font-size: 0.875rem;
+}
+
+article>section>details>summary>header {
+  display: block;
+  margin-bottom: 0.5em;
+}
+
+article>section>details>summary>header>h1>.taxon {
+  display: block;
+  font-size: var(--article-details-h1-taxon-font-size);
+  color: var(--article-taxon-color);
+  padding-bottom: 5pt;
+}
+
+article>section>details>summary>header>h1>.taxon:empty {
+  display: none;
+}
+
+section.block>details {
+  margin-bottom: 0.4em;
+}
+
+section.block>details[open] {
+  margin-bottom: 1em;
+}
+
+section.block.link-list>details {
+  margin-bottom: 0em;
+}
+
+section.block.link-list>details>section.block>details {
+  margin-bottom: 0.25em;
+}
+
+/* class */
+.inline-typst {
+  display: inline;
+  margin: 0 0;
+  font-size: var(--katex-font-size);
+}
+
+.block {
+  padding-left: 5px;
+  padding-right: 10px;
+  padding-bottom: 2px;
+  border-radius: var(--radius);
+}
+
+.block:hover {
+  background-color: var(--hover-color-block);
+}
+
+.block.hide-metadata>details>summary>header>.metadata {
+  display: none;
+}
+
+img {
+  object-fit: cover;
+  max-width: 100%;
+}
+
+figure {
+  text-align: center;
+}
+
+figcaption {
+  font-style: italic;
+  padding: 3px;
+}
+
+mark {
+  background-color: var(--mark-color);
+}
+
+hr {
+  margin-top: 10px;
+  margin-bottom: 20px;
+  background-color: gray;
+  border: 0 none;
+  width: 100%;
+  height: 1pt;
+}
+
+ul,
+ol {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.logo>span {
+  color: var(--logo-color);
+  text-decoration: none;
+}
+
+.logo>span:hover {
+  color: var(--logo-hover-color);
+}
+
+.logo {
+  font-weight: 600;
+  font-size: var(--logo-font-size);
+}
+
+section section[data-taxon="Reference"]>details>summary>header>h1>.taxon,
+section section[data-taxon="Person"]>details>summary>header>h1>.taxon {
+  display: none;
+}
+
+section .block[data-taxon]>header>h1,
+section .block[data-taxon] details>summary>header>h1 {
+  font-size: var(--section-details-h1-font-size);
+}
+
+footer>section {
+  margin-bottom: 1em;
+}
+
+footer h2 {
+  font-size: var(--footer-h2-font-size);
+}
+
+.metadata ul {
+  padding-left: 0;
+  display: inline;
+}
+
+.metadata li::after {
+  content: " · ";
+}
+
+.metadata li:last-child::after {
+  content: "";
+}
+
+.metadata * {
+  display: inline;
+}
+
+.link {
+  cursor: pointer;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: inherit;
+}
+
+a.slug:hover,
+a.edit:hover,
+a.hash:hover,
+a.bullet:hover,
+.link:hover {
+  background-color: var(--hover-color-link);
+}
+
+.link.external,
+.link.asset {
+  text-decoration: underline;
+}
+
+.link.asset::before {
+  content: "[F] ";
+  /* file */
+}
+
+a.link.local,
+.link.local a,
+a.slug,
+a.edit,
+a.hash {
+  box-shadow: none;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  overflow-wrap: break-word;
+}
+
+.slug,
+.edit,
+.doi,
+.orcid {
+  color: var(--slug-color);
+  font-weight: 200;
+}
+
+body>header {
+  margin-bottom: 0.5em;
+}
+
+#grid-wrapper>article {
+  max-width: var(--article-max-width);
+  margin-right: auto;
+  grid-area: article;
+}
+
+@media only screen and (max-width: 1000px) {
+  figure {
+    margin: 0rem;
+  }
+
+  .block {
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-bottom: 2px;
+    border-radius: 5px;
+  }
+
+  #grid-wrapper>nav {
+    transition: ease all 0.2s;
+  }
+
+  .mobile-sticky-nav {
+    position: sticky;
+    top: 0px;
+    max-height: calc(100vh - 0px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+
+    background-color: var(--background-color);
+    z-index: 7;
+    border-bottom: solid var(--text-color);
+  }
+}
+
+@media only screen and (min-width: 1000px) {
+  body {
+    margin-top: 2rem;
+    margin-left: 2rem;
+    transition: ease all 0.2s;
+  }
+
+  #grid-wrapper {
+    display: grid;
+    grid-auto-flow: column;
+  }
+
+  .sticky-nav {
+    position: sticky;
+    top: 0px;
+    max-height: calc(100vh - 0px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+nav#toc li.item-summary li {
+  display: none;
+}
+
+nav#toc ul {
+  list-style-type: none;
+}
+
+nav#toc li>ul {
+  margin: 0;
+  padding-left: 1rem;
+}
+
+nav#toc,
+nav#toc a {
+  color: var(--toc-link-color);
+}
+
+nav#toc {
+  grid-area: toc;
+}
+
+nav {
+  font-optical-sizing: auto;
+}
+
+nav#toc a.bullet {
+  opacity: 0.7;
+  margin-left: 0.4rem;
+  margin-right: 0.3rem;
+  padding-left: 0.2rem;
+  padding-right: 0.2rem;
+  text-decoration: none;
+}
+
+.typst-text use[fill="#000000"],
+.typst-group use[fill="#000000"],
+path.typst-shape[fill="#000000"] {
+  fill: var(--text-color);
+}
+
+path.typst-shape[stroke="#000000"] {
+  stroke: var(--text-color);
+}</style><style>
+@media only screen and (min-width: 1000px) {
+  #grid-wrapper { grid-template-columns: var(--article-max-width) var(--toc-max-width); }
+  nav#toc { max-width: 45ex; }
+}
+</style><link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Inria+Sans:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+  rel="stylesheet" /></head><body><header class="header"><nav class="nav"><div class="logo"><span class="cursor-pointer" onclick="window.location.href='/index.html'" title="🫤👉">« 🫤👉</span></div></nav></header><div id="grid-wrapper" style="grid-template-areas: 'article toc';" data-base-url="/"><nav id="toc" class="sticky-nav mobile-sticky-nav"><div id="theme-options"></div></nav>
+
+<article><section class="block" data-taxon=""><details open><summary id="blog-zh-dpm-nbe"><header><h1><span class="taxon"></span><span lang="zh">一种在</span> NbE <span lang="zh">中实现依赖模式匹配的方法</span> <a class="slug" href="/blog/zh/dpm-nbe.html">[blog/zh/dpm-nbe]</a></h1><div class="metadata"><ul><li class="meta-item">Apr. 6. 2026</li></ul></div></header></summary>
+<p><span lang="zh">我在本科最后一年做过一个玩具项目，叫</span> <span class="link external"><a href="https://github.com/KonjacSource/ShiTT2" title="ShiTT [https://github.com/KonjacSource/ShiTT2]">ShiTT</a></span>（<span lang="zh">半年前我把它完全重写了一遍）。它是一个</span> Agda <span lang="zh">风格的依赖类型检查器，基于</span> Andras Kovacs <span lang="zh">的</span> <span class="link external"><a href="https://github.com/AndrasKovacs/elaboration-zoo" title="elaboration-zoo [https://github.com/AndrasKovacs/elaboration-zoo]">elaboration-zoo</a></span>，<span lang="zh">并支持依赖模式匹配（</span>Dependent Pattern Matching, DPM）。<span lang="zh">我觉得有必要写一篇文章，分享一些自己想到的有趣思路。</span></p>
+<p><span lang="zh">其中一个最有挑战的问题是：如何在</span> NbE（Normalization by Evaluation）<span lang="zh">语境下实现</span> DPM。<span lang="zh">众所周知，当我们用</span> <code>refl</code> <span lang="zh">去匹配类型</span> $Id(u, v)$ <span lang="zh">时，需要对项</span> $u$ <span lang="zh">和</span> $v$ <span lang="zh">做</span> unification。<span lang="zh">这个过程本质上是在构造一个替换，并把它应用到分支体上。但在</span> NbE <span lang="zh">的实现里，通常并没有一个简单直接的替换机制。</span></p>
+<h2><span lang="zh">一个朴素方案</span></h2>
+<p><span lang="zh">以</span> <span class="link external"><a href="https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn" title="elaboration-zoo/02-typecheck-closures-debruijn [https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn]">elaboration-zoo/02-typecheck-closures-debruijn</a></span> <span lang="zh">为例，它有一个求值环境，里面保存了所有变量的值。一个直觉做法是：通过修改求值环境中被</span> unification <span lang="zh">变量的值来实现</span> DPM。<span lang="zh">比如：</span></p>
+<p>$$
+\begin{aligned}
+&amp;f : (x : \mathbb{N}) \to Id\ x\ 0 \to ... \\
+&amp;f\ x\ * = ?_1
+\end{aligned}
+$$</p>
+<p><span lang="zh">如果占位符</span> $*$ <span lang="zh">是变量模式</span> $h$，<span lang="zh">那么</span> $?_1$ <span lang="zh">的类型检查上下文应为：</span></p>
+<p>$$
+x : \mathbb{N},\ h : Id\ x\ 0
+$$</p>
+<p><span lang="zh">对应的求值环境应为：</span></p>
+<p>$$
+\mathbf{Env} = x \mapsto x,\ h \mapsto h
+$$</p>
+<p><span lang="zh">如果</span> $*$ <span lang="zh">是构造子模式</span> <code>refl</code>，<span lang="zh">那么求值环境应为：</span></p>
+<p>$$
+\mathbf{Env} = x \mapsto 0
+$$</p>
+<p><span lang="zh">这样一来，右侧表达式里所有出现的</span> $x$ <span lang="zh">都会直接求值成</span> $0$。<span lang="zh">但这个办法有个问题：这种</span> unification <span lang="zh">会破坏求值环境的</span> well-formedness。</p>
+<p><span lang="zh">求值环境存储的是所有变量的值，而</span> $\mathbf{Value}$ <span lang="zh">类型可以看成是范式（</span>normal form）<span lang="zh">的表示。我们把</span> $x$ <span lang="zh">的值从</span>“<span lang="zh">变量</span>”<span lang="zh">改成了</span>“<span lang="zh">其他值</span>”，<span lang="zh">这可能会让依赖于</span> $x$ <span lang="zh">的其他变量变得</span> ill-formed。<span lang="zh">比如环境里有</span> $y \mapsto x + 1$，<span lang="zh">当我们把</span> $x$ <span lang="zh">改成</span> $0$ <span lang="zh">后，</span>$y$ <span lang="zh">就变成</span> $0 + 1$，<span lang="zh">这不是范式。继续下去，依赖于</span> $y$ <span lang="zh">的值也会被连锁污染。</span></p>
+<h2><span lang="zh">一个更好的方案</span></h2>
+<p><span lang="zh">一种变通方式是：每次需要做</span> unification <span lang="zh">时，都把环境整体更新一遍。</span></p>
+<p><span lang="zh">假设我们有一个</span> well-formed <span lang="zh">环境</span> $E$，<span lang="zh">其中</span> $(x \mapsto x) \in E$。<span lang="zh">现在有一个</span> unification <span lang="zh">赋值</span> $x = v$（$v$ <span lang="zh">是一个值）。上面已经说明，直接在</span> $E$ <span lang="zh">里把</span> $x$ <span lang="zh">替成</span> $v$ <span lang="zh">会失败。于是我们引入新操作</span> $\mathbf{updateVal}$：</p>
+<p>$$
+\begin{aligned}
+&amp;\mathbf{updateVal} : \mathbf{Env}^! \to \mathbf{Value} \to \mathbf{Value} \\
+&amp;\mathbf{updateVal}\ env\ v = \mathbf{eval}\ env\ v\ (\mathbf{quote}\ (\mathbf{length}\ env\ v)\ v)
+\end{aligned}
+$$</p>
+<p><span lang="zh">这里的</span> $\mathbf{Env}^!$ <span lang="zh">表示环境不一定</span> well-formed。<span lang="zh">也许有更聪明的</span> $\mathbf{updateVal}$ <span lang="zh">实现方式，不需要先</span> quote <span lang="zh">再</span> eval，<span lang="zh">但先用这个定义就够了。</span></p>
+<p><span lang="zh">可以把</span> $\mathbf{updateVal}$ <span lang="zh">理解成</span> $\mathbf{Value}$ <span lang="zh">上的替换操作。例如：</span></p>
+<p>$$
+\mathbf{updateVal}\ (E[x \mapsto v])\ t = t[v/x]
+$$</p>
+<p><span lang="zh">其中</span> $E[x \mapsto v]$ <span lang="zh">是把</span> $v$ <span lang="zh">在环境</span> $E$ <span lang="zh">中朴素替换给</span> $x$ <span lang="zh">得到的结果（正如前面所说，这个结果通常是</span> ill-formed <span lang="zh">的）。</span></p>
+<p><span lang="zh">接下来定义</span> $\mathbf{updateEnv}$：</p>
+<p>$$
+\begin{aligned}
+&amp;\mathbf{updateEnv} : \mathbf{Env}^! \to \mathbf{Env} \\
+&amp;\mathbf{updateEnv}\ env\ v = \mathbf{map}\ (\mathbf{updateVal}\ (\mathbf{length}\ env\ v))\ env\ v
+\end{aligned}
+$$</p>
+<p><span lang="zh">也就是把</span> $\mathbf{updateVal}(E[x \mapsto v])$ <span lang="zh">映射到</span> $E[x \mapsto v]$ <span lang="zh">的每个值上。于是我们得到：</span></p>
+<p>$$
+E' := \mathbf{updateEnv}(E[x \mapsto v])
+$$</p>
+<p><span lang="zh">那么</span> $E'$ <span lang="zh">是否</span> well-formed？<span lang="zh">是不是我们想要的环境？答案是肯定的。</span></p>
+<p><span lang="zh">我们可以用一个</span>“<span lang="zh">层级参数</span>”<span lang="zh">来定义环境的</span> ill-formed <span lang="zh">程度。给定环境</span> $E$ <span lang="zh">下的值</span> $v$：</p>
+<ul>
+<li><span lang="zh">如果</span> $v$ <span lang="zh">中任意自由变量</span> $x$ <span lang="zh">都满足</span> $eval\ E\ x = x$，<span lang="zh">就说</span> $v$ <span lang="zh">是</span> well-formed <span lang="zh">的，或称它是</span> $0$-ill-formed。</li>
+<li><span lang="zh">如果</span> $v$ <span lang="zh">中存在自由变量</span> $x$，<span lang="zh">使得</span> $eval\ E\ x = v'$ <span lang="zh">且</span> $v'$ <span lang="zh">是</span> $n$-ill-formed，<span lang="zh">就说</span> $v$ <span lang="zh">是</span> $(n+1)$-ill-formed。</li>
+<li><span lang="zh">若一个环境含有某个</span> $n$-ill-formed <span lang="zh">的值，就说这个环境是</span> $n$-ill-formed。</li>
+</ul>
+<p><span lang="zh">例如：</span></p>
+<p>$$
+\begin{aligned}
+&amp;\text{well-formed: }\quad x \mapsto x,\ y \mapsto x + 1 \\
+&amp;\text{1-ill-formed: }\quad x \mapsto 0,\ y \mapsto x + 1 \\
+&amp;\text{2-ill-formed: }\quad x \mapsto 0,\ y \mapsto x + 1,\ z \mapsto y + 1
+\end{aligned}
+$$</p>
+<p><span lang="zh">可以证明：如果</span> $E$ <span lang="zh">是</span> $(n+1)$-ill-formed，<span lang="zh">那么</span> $\mathbf{updateEnv}\ E$ <span lang="zh">是</span> $n$-ill-formed。</p>
+<p><span lang="zh">当</span> $E$ <span lang="zh">是</span> well-formed <span lang="zh">的、且</span> $\mathbf{eval}\ E\ x = x$，<span lang="zh">并且</span> $E$ <span lang="zh">中有其他变量依赖</span> $x$ <span lang="zh">时，很容易看出</span> $E[x \mapsto v]$ <span lang="zh">是</span> 1-ill-formed；<span lang="zh">再对它应用</span> $\mathbf{updateEnv}$ <span lang="zh">就能恢复为</span> well-formed <span lang="zh">环境。</span></p>
+<p><span lang="zh">把</span> $\mathbf{updateEnv}$ <span lang="zh">的类型改写得更直观一些：</span></p>
+<p>$$
+\mathbf{updateEnv} : \mathbf{Env}^{!(n+1)} \to \mathbf{Env}^{!n}
+$$</p>
+<p><span lang="zh">其中</span> $!n$ <span lang="zh">表示</span> ill-formed <span lang="zh">层级。</span></p>
+<p><span lang="zh">另外，不要忘了：更新环境之后，也要同步更新类型检查上下文中的所有类型。</span></p>
+<h2><span lang="zh">依赖模式匹配的一个限制</span></h2>
+<p><span lang="zh">这个方法有效，但有性能代价。每次</span> unification <span lang="zh">都要重新求值整个环境，开销比较大。一个折中是限制上下文长度。比如下面这段</span> Agda：</p>
+<pre><code class="language-agda">module M (x : Nat) where
+
+  f : Id x 0 -&gt; ...
+  f refl = ...
+</code></pre>
+<p><span lang="zh">函数</span> <code>f</code> <span lang="zh">可以对外层模块变量</span> $x$ <span lang="zh">做</span> unification。<span lang="zh">在</span> ShiTT <span lang="zh">中，我们可以限制依赖模式匹配的能力，只允许对</span>“<span lang="zh">当前函数中新引入</span>”<span lang="zh">的变量做</span> unification（<span lang="zh">我还没实现）。于是可改写为：</span></p>
+<pre><code class="language-agda">module M (x : Nat) where
+
+  f' : (x : Nat) -&gt; Id x 0 -&gt; ...
+  f' x refl = ...
+
+  f = f' x
+</code></pre>
+<p><span lang="zh">对于支持</span> <code>match</code> <span lang="zh">表达式的语言，这个限制还有一个额外理由。</span></p>
+<p><span lang="zh">先看如下数据类型：</span></p>
+<pre><code class="language-agda">data T : Set -&gt; Set where
+  C : T Bool
+</code></pre>
+<p><span lang="zh">再看一个包含</span> <code>match</code> <span lang="zh">的函数：</span></p>
+<pre><code class="language-agda">f : (A : Set) -&gt; T A -&gt; A
+f A = λ t -&gt; match t with
+            | C =&gt; true -- 此处可推出 A = Bool
+</code></pre>
+<p><span lang="zh">于是我们可以定义：</span></p>
+<pre><code class="language-agda">g1, g2 : T Nat -&gt; Nat
+g1 = f Nat
+
+g2 = λ t -&gt; match t with
+           | C =&gt; true
+</code></pre>
+<p><code>g1</code> <span lang="zh">是良类型的，而</span> <code>g2</code> <span lang="zh">不是；但又能观察到：</span></p>
+<p>$$
+g2 = f\ A\ [Nat/A] = g1
+$$</p>
+<p><span lang="zh">也就是说，替换并不保持类型！</span></p>
+<p><span lang="zh">解决方式和前面一致：限制依赖模式匹配，要求所有参与</span> unification <span lang="zh">的变量都必须出现在</span> <code>match</code> <span lang="zh">表达式中。</span></p>
+<p><span lang="zh">于是上面的代码应改写为：</span></p>
+<pre><code class="language-agda">f A = λ t -&gt; match A , t with
+            | .Bool , C =&gt; true
+</code></pre>
+<p><span lang="zh">这样之后，</span><code>g2 ≠ f A [Nat / A]</code>，<span lang="zh">并且它按预期不再是良类型。</span></p>
+<p><span lang="zh">虽然</span> Agda <span lang="zh">没有原生</span> <code>match</code> <span lang="zh">表达式支持，</span><span class="link external"><a href="https://github.com/agda/agda/issues/8192" title="但有会导致同类问题的 lambda-case 表达式 [https://github.com/agda/agda/issues/8192]"><span lang="zh">但有会导致同类问题的</span> lambda-case <span lang="zh">表达式</span></a></span>。<span lang="zh">不过他们似乎把</span> lambda-case <span lang="zh">当作顶层模式匹配的语法糖处理，因此在</span> Agda <span lang="zh">的表达式层面，替换依然是保类型的（因为</span> Agda <span lang="zh">表达式里并没有模式匹配）。</span></p>
+<p><span lang="zh">基于这两点，我认为对依赖模式匹配做一定能力限制是个不错的主意。</span></p>
+<h2><span lang="zh">参考资料</span></h2>
+<ul>
+<li><span class="link external"><a href="https://github.com/KonjacSource/ShiTT2" title="小小的老子🫡. ShiTT [https://github.com/KonjacSource/ShiTT2]"><span lang="zh">小小的老子</span>🫡. ShiTT</a></span></li>
+<li><span class="link external"><a href="https://github.com/AndrasKovacs/elaboration-zoo" title="Andras Kovacs. elaboration-zoo [https://github.com/AndrasKovacs/elaboration-zoo]">Andras Kovacs. elaboration-zoo</a></span></li>
+<li><span class="link external"><a href="https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf" title="Ulf Norell. Towards a practical programming language based on dependent type theory [https://www.cse.chalmers.se/~ulfn/papers/thesis.pdf]">Ulf Norell. Towards a practical programming language based on dependent type theory</a></span></li>
+<li><span class="link external"><a href="https://jesper.sikanda.be/files/elaborating-dependent-copattern-matching.pdf" title="Jesper Cockx and Andreas Abel. Elaborating Dependent (Co)pattern Matching [https://jesper.sikanda.be/files/elaborating-dependent-copattern-matching.pdf]">Jesper Cockx and Andreas Abel. Elaborating Dependent (Co)pattern Matching</a></span></li>
+</ul>
+</details></section><footer></footer></article></div></body></html>
