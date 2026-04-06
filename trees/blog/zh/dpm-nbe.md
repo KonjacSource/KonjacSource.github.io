@@ -5,7 +5,7 @@ date: Apr. 6. 2026
 
 我在本科最后一年做过一个玩具项目，叫 [ShiTT](https://github.com/KonjacSource/ShiTT2)（半年前我把它完全重写了一遍）。它是一个 Agda 风格的依赖类型检查器，基于 Andras Kovacs 的 [elaboration-zoo](https://github.com/AndrasKovacs/elaboration-zoo)，并支持依赖模式匹配（Dependent Pattern Matching, DPM）。我觉得有必要写一篇文章，分享一些自己想到的有趣思路。
 
-其中一个最有挑战的问题是：如何在 NbE（Normalization by Evaluation）语境下实现 DPM。众所周知，当我们用 `refl` 去匹配类型 $Id(u, v)$ 时，需要对项 $u$ 和 $v$ 做 unification。这个过程本质上是在构造一个替换，并把它应用到分支体上。但在 NbE 的实现里，通常并没有一个简单直接的替换机制。
+其中一个最有挑战的问题是：如何在 NbE（Normalization by Evaluation）语境下实现 DPM。众所周知，当我们用 `refl` 去匹配类型 $Id(u, v)$ 时，需要对项 $u$ 和 $v$ 做 unification。这个过程本质上是在构造一个替换，并把它应用到等式右端上。但在 NbE 的实现里，通常并没有一个简单直接的替换机制。
 
 ## 一个朴素方案
 
@@ -108,7 +108,7 @@ $$
 
 其中 $!n$ 表示 ill-formed 层级。
 
-另外，不要忘了：更新环境之后，也要同步更新类型检查上下文中的所有类型。
+另外：更新环境之后，也要同步更新类型检查上下文中的所有类型。
 
 ## 限制依赖模式匹配
 
@@ -180,7 +180,7 @@ f A = λ t -> match A , t with
 
 虽然 Agda 没有原生 `match` 表达式支持，[但有会导致同类问题的 lambda-case 表达式](https://github.com/agda/agda/issues/8192)。不过他们似乎把 lambda-case 当作顶层模式匹配的语法糖处理，因此在 Agda 的表达式层面，替换依然是保类型的（因为 Agda 表达式里并没有模式匹配）。
 
-基于这两点，我认为对依赖模式匹配做一定能力限制是个不错的主意。
+基于这两点，我认为对依赖模式匹配做限制是个不错的主意。
 
 ## 参考资料
 

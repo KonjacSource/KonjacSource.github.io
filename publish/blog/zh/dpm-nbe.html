@@ -1101,7 +1101,7 @@ path.typst-shape[stroke="#000000"] {
 
 <article><section class="block" data-taxon=""><details open><summary id="blog-zh-dpm-nbe"><header><h1><span class="taxon"></span><span lang="zh">一种在</span> NbE <span lang="zh">中实现依赖模式匹配的方法</span> <a class="slug" href="/blog/zh/dpm-nbe.html">[blog/zh/dpm-nbe]</a></h1><div class="metadata"><ul><li class="meta-item">Apr. 6. 2026</li></ul></div></header></summary>
 <p><span lang="zh">我在本科最后一年做过一个玩具项目，叫</span> <span class="link external"><a href="https://github.com/KonjacSource/ShiTT2" title="ShiTT [https://github.com/KonjacSource/ShiTT2]">ShiTT</a></span>（<span lang="zh">半年前我把它完全重写了一遍）。它是一个</span> Agda <span lang="zh">风格的依赖类型检查器，基于</span> Andras Kovacs <span lang="zh">的</span> <span class="link external"><a href="https://github.com/AndrasKovacs/elaboration-zoo" title="elaboration-zoo [https://github.com/AndrasKovacs/elaboration-zoo]">elaboration-zoo</a></span>，<span lang="zh">并支持依赖模式匹配（</span>Dependent Pattern Matching, DPM）。<span lang="zh">我觉得有必要写一篇文章，分享一些自己想到的有趣思路。</span></p>
-<p><span lang="zh">其中一个最有挑战的问题是：如何在</span> NbE（Normalization by Evaluation）<span lang="zh">语境下实现</span> DPM。<span lang="zh">众所周知，当我们用</span> <code>refl</code> <span lang="zh">去匹配类型</span> $Id(u, v)$ <span lang="zh">时，需要对项</span> $u$ <span lang="zh">和</span> $v$ <span lang="zh">做</span> unification。<span lang="zh">这个过程本质上是在构造一个替换，并把它应用到分支体上。但在</span> NbE <span lang="zh">的实现里，通常并没有一个简单直接的替换机制。</span></p>
+<p><span lang="zh">其中一个最有挑战的问题是：如何在</span> NbE（Normalization by Evaluation）<span lang="zh">语境下实现</span> DPM。<span lang="zh">众所周知，当我们用</span> <code>refl</code> <span lang="zh">去匹配类型</span> $Id(u, v)$ <span lang="zh">时，需要对项</span> $u$ <span lang="zh">和</span> $v$ <span lang="zh">做</span> unification。<span lang="zh">这个过程本质上是在构造一个替换，并把它应用到等式右端上。但在</span> NbE <span lang="zh">的实现里，通常并没有一个简单直接的替换机制。</span></p>
 <h2><span lang="zh">一个朴素方案</span></h2>
 <p><span lang="zh">以</span> <span class="link external"><a href="https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn" title="elaboration-zoo/02-typecheck-closures-debruijn [https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-typecheck-closures-debruijn]">elaboration-zoo/02-typecheck-closures-debruijn</a></span> <span lang="zh">为例，它有一个求值环境，里面保存了所有变量的值。一个直觉做法是：通过修改求值环境中被</span> unification <span lang="zh">变量的值来实现</span> DPM。<span lang="zh">比如：</span></p>
 <p>$$
@@ -1172,7 +1172,7 @@ $$</p>
 \mathbf{updateEnv} : \mathbf{Env}^{!(n+1)} \to \mathbf{Env}^{!n}
 $$</p>
 <p><span lang="zh">其中</span> $!n$ <span lang="zh">表示</span> ill-formed <span lang="zh">层级。</span></p>
-<p><span lang="zh">另外，不要忘了：更新环境之后，也要同步更新类型检查上下文中的所有类型。</span></p>
+<p><span lang="zh">另外：更新环境之后，也要同步更新类型检查上下文中的所有类型。</span></p>
 <h2><span lang="zh">限制依赖模式匹配</span></h2>
 <p><span lang="zh">这个方法有效，但有性能代价。每次</span> unification <span lang="zh">都要重新求值整个环境，开销比较大。一个方案是限制上下文长度。比如下面这段</span> Agda：</p>
 <pre><code class="language-agda">module M (x : Nat) where
@@ -1217,7 +1217,7 @@ $$</p>
 </code></pre>
 <p><span lang="zh">这样之后，</span><code>g2 ≠ f A [Nat / A]</code>，<span lang="zh">并且它按预期不再是良类型。</span></p>
 <p><span lang="zh">虽然</span> Agda <span lang="zh">没有原生</span> <code>match</code> <span lang="zh">表达式支持，</span><span class="link external"><a href="https://github.com/agda/agda/issues/8192" title="但有会导致同类问题的 lambda-case 表达式 [https://github.com/agda/agda/issues/8192]"><span lang="zh">但有会导致同类问题的</span> lambda-case <span lang="zh">表达式</span></a></span>。<span lang="zh">不过他们似乎把</span> lambda-case <span lang="zh">当作顶层模式匹配的语法糖处理，因此在</span> Agda <span lang="zh">的表达式层面，替换依然是保类型的（因为</span> Agda <span lang="zh">表达式里并没有模式匹配）。</span></p>
-<p><span lang="zh">基于这两点，我认为对依赖模式匹配做一定能力限制是个不错的主意。</span></p>
+<p><span lang="zh">基于这两点，我认为对依赖模式匹配做限制是个不错的主意。</span></p>
 <h2><span lang="zh">参考资料</span></h2>
 <ul>
 <li><span class="link external"><a href="https://github.com/KonjacSource/ShiTT2" title="小小的老子🫡. ShiTT [https://github.com/KonjacSource/ShiTT2]"><span lang="zh">小小的老子</span>🫡. ShiTT</a></span></li>
