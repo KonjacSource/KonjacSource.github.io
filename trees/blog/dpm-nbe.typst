@@ -134,6 +134,7 @@ module M (x : Nat) where
 ```
 
 For a language with match expressions support, there is an extra reason to do this restriction. 
+#link("https://yanningchen.me")[LightQuantum] occurred this to me. 
 
 If we have the following data type,
 
