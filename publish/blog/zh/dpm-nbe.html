@@ -1173,8 +1173,8 @@ $$</p>
 $$</p>
 <p><span lang="zh">其中</span> $!n$ <span lang="zh">表示</span> ill-formed <span lang="zh">层级。</span></p>
 <p><span lang="zh">另外，不要忘了：更新环境之后，也要同步更新类型检查上下文中的所有类型。</span></p>
-<h2><span lang="zh">依赖模式匹配的一个限制</span></h2>
-<p><span lang="zh">这个方法有效，但有性能代价。每次</span> unification <span lang="zh">都要重新求值整个环境，开销比较大。一个折中是限制上下文长度。比如下面这段</span> Agda：</p>
+<h2><span lang="zh">限制依赖模式匹配</span></h2>
+<p><span lang="zh">这个方法有效，但有性能代价。每次</span> unification <span lang="zh">都要重新求值整个环境，开销比较大。一个方案是限制上下文长度。比如下面这段</span> Agda：</p>
 <pre><code class="language-agda">module M (x : Nat) where
 
   f : Id x 0 -&gt; ...
@@ -1188,7 +1188,7 @@ $$</p>
 
   f = f' x
 </code></pre>
-<p><span lang="zh">对于支持</span> <code>match</code> <span lang="zh">表达式的语言，这个限制还有一个额外理由。</span></p>
+<p><span lang="zh">对于支持</span> <code>match</code> <span lang="zh">表达式的语言，这个限制还有一个额外理由</span> <a href="%22https://yanningchen.me%22">LightQuantum</a> <span lang="zh">告诉我的。</span></p>
 <p><span lang="zh">先看如下数据类型：</span></p>
 <pre><code class="language-agda">data T : Set -&gt; Set where
   C : T Bool

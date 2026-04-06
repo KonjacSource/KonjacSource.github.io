@@ -2,4 +2,4 @@
 title: Notes
 ---
 
-[+-](./type-theory-book/index.md#:embed)
+[+-](./excercises.typst#:embed)
