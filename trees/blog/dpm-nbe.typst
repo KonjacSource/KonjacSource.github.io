@@ -178,6 +178,16 @@ All though Agda have no native support for match expressions, #external("https:/
 
 Upon those two reasons, I think it might be a good idea to limit the ability of dependent pattern matching. 
 
+== Update. Apr. 10. 2026
+
+I just realized that the match expression example is wrong, the above code is also not well-typed under substitution. The final solution is to use lambda-case only (or equivalently, only allow matching on variables), and forbid unification on outer variables. So the above code will be rewritten as,
+
+```agda
+f = λ { A C -> true } : (A : Set) → T A → A 
+```
+
+And lambda case only reduces when it is fully applied. 
+
 == References
 
 - #external("https://github.com/KonjacSource/ShiTT2")[me🫡. ShiTT]
