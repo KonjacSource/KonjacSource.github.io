@@ -25,13 +25,13 @@ Take #external("https://github.com/AndrasKovacs/elaboration-zoo/tree/master/02-t
 
 $
   &f : (x : NN) → Id x" "0 → ...\ 
-  &f" "x" "* = "" ?_1
-$
+  &f" "x" "square := "" ?_1
+$ 
 
-If the placeholder $*$ is a variable pattern $h$, the type checking context of $?_1$ should be,
+If the placeholder $square$ is a variable pattern $h$, the type checking context of $?_1$ should be,
 
 $
-  x : NN, h : Id x 0
+  x : NN, h : Id x" "0
 $ 
 
 and the evaluation environment should be,
@@ -40,7 +40,7 @@ $
   x |-> x , h |-> h
 $
 
-If $*$ is the constructor pattern $refl$, then the evaluation environment should be,
+If $square$ is the constructor pattern $refl$, then the evaluation environment should be,
 
 $
   x |-> 0  
@@ -64,7 +64,7 @@ For example, we have a well-formed evaluation environment $E$, such that $(x |->
 
 $
   &updVal : Env^! → Value → Value\
-  &updVal" "e n v" "v = eval e n v" "(quote ("length" e n v)" "v)
+  &updVal" "e n v" "v := eval e n v" "(quote ("length" e n v)" "v)
 $
 
 Here $Env^!$ implies that the environment need *not* to be well-formed. There might be a smarter way to implement $updVal$ without quoting it back, but let us just use this for now.
@@ -77,7 +77,7 @@ Then, we can map $updVal" "(E [x |-> v])$ to every value in $E [x |-> v]$. We ca
 
 $
   &updEnv : Env^! → Env\
-  &updEnv" "e n v = "map" (updVal ("length" e n v))" "e n v
+  &updEnv" "e n v := "map" (updVal ("length" e n v))" "e n v
 $
 
 Thus we obtain $E' := updEnv (E[x |-> v])$. Is $E'$ well-formed and is it the environment we want?
