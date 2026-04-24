@@ -1174,6 +1174,9 @@ path.typst-shape[stroke="#000000"] {
     <p>I just realized that the match expression example is wrong, the above code is also not well-typed under substitution. The final solution is to use lambda-case only (or equivalently, only allow matching on variables), and forbid unification on outer variables. So the above code will be rewritten as,</p>
     <pre><code data-lang="agda">f <span style="color: #d73948">=</span> <span style="color: #d73948">λ</span> { A C <span style="color: #d73948">-></span> true } <span style="color: #d73948">:</span> (A <span style="color: #d73948">:</span> <span style="color: #d73948">Set</span>) <span style="color: #d73948">→</span> T A <span style="color: #d73948">→</span> A </code></pre>
     <p>And lambda case only reduces when it is fully applied.</p>
+    <h3>Update. Apr. 24. 2026</h3>
+    <p>Turns out Rocq’s match-in-return-with expressions work just fine, no such problem as I mentioned above.</p>
+    <p>I so silly.</p>
     <h3>References</h3>
     <ul>
       <li><a href="https://github.com/KonjacSource/ShiTT2"><span style="text-decoration: underline">me🫡. ShiTT</span></a></li>

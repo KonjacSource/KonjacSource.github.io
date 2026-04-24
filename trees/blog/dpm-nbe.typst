@@ -188,6 +188,12 @@ f = λ { A C -> true } : (A : Set) → T A → A
 
 And lambda case only reduces when it is fully applied. 
 
+== Update. Apr. 24. 2026
+
+Turns out Rocq's match-in-return-with expressions work just fine, no such problem as I mentioned above. 
+
+I so silly.
+
 == References
 
 - #external("https://github.com/KonjacSource/ShiTT2")[me🫡. ShiTT]
