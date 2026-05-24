@@ -106,7 +106,7 @@ Where $!n$ indicates the level of ill-formedness.
 
 And also, don't forget to using the updated environment to update all the types in type checking context as well.
 
-== A Limitation of Dependent Pattern Matching
+== A Limited Version of Dependent Pattern Matching
 
 This approach comes with an efficiency problem. Every time we need to unify two terms, we re-evaluate the whole environment, which is quite expensive. A workaround is to limit the length of the context. One can write the following Agda code,
 
