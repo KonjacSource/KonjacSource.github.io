@@ -1,0 +1,169 @@
+#import "../_lib/prelude.typ": *
+#import "../_lib/kodama.typ": *
+#import "@preview/ctheorems:1.1.3": *
+#import "@preview/zh-kit:0.1.0": *
+
+#show: kodama
+#show: thmrules
+#show: doc => setup-base-fonts(doc)
+
+// #set text(font: ("Inria Sans", "HarmonyOS Sans SC"))
+
+#metadata((
+  "title": "Quick Note on Normalization by Evaluation ", //
+  "date": "Jun. 2026",
+))
+
+This is a note on reading the following resources about Normalization by Evaluation (NbE):
+
+- #external("https://www.cse.chalmers.se/~abela/habil.pdf")[Andreas Abel. Normalization by Evaluation Dependent Types and Impredicativity].
+
+- #external("https://dl.acm.org/doi/epdf/10.1145/3341711")[
+  Daniel Gratzer, Jonathan Sterling, Lars Birkedal. Implementing a Modal Dependent Type Theory]. And we following the color setting in this paper.
+
+- #external("https://www.danielgratzer.com/papers/2018-logsem-slides.pdf")[Daniel Gratzer. Normalization by Evaluation for Martin-Löf Type Theory].
+
+
+#let cnf(x) = text(fill: fuchsia, $#x$)
+#let cval(x) = text(fill: red, $#x$)
+#let cne(x) = text(fill: rgb("#907060"), $#x$)
+#let ccls(x) = text(fill: green, $#x$)
+#let cstx(x) = text(fill: blue, $#x$)
+
+#let Tm = $bold("Tm")$
+#let Ty = $bold("Ty")$
+#let Nf = $bold("Nf")$
+#let Ne = $bold("Ne")$
+#let SA = $cstx(A)$
+#let SB = $cstx(B)$
+#let SGG = $cstx(Gamma)$
+#let SGD = $cstx(Delta)$
+
+#let st = $cstx(t)$
+#let su = $cstx(u)$
+#let sv = $cstx(v)$
+#let sa = $cstx(a)$
+#let sb = $cstx(b)$
+
+#let nf = $bold("nf")$
+#let nbe = $bold("nbe")$
+
+== Language Agreement
+
+I am going to use the language mixed Hanzi (Kanji) and English in this note, and hoping both Chinese and Japanese readers can understand it. 
+
+我發現 many 名詞 in 中國語 and 日本語 are 同一, but 文法 and 副詞 are 完全 different. So my 提案 is 借用 some 副詞 from 英語, then 中國人 and 日本人 can 互相交流 with 中學生 level 英語 and 漢字.
+#align(right)[------ @ 安处岛]
+
+#let recursion = "递帰"
+#let NNN = "自然数"
+#let inductive = "帰納"
+*術語約定*
+
+I hope I can be neutral in the choice of the Kanji terms as much as possible.
+
+型 : type/类型
+
+依存型論: dependent type theory/依賴類型論/依值類型論
+
+正規性: normalization 
+
+#NNN: natural number
+
+#recursion: recursion/再帰
+
+#inductive: 帰納
+
+== 背景
+
+我們の終目標 is to 證明正規性 for a 基本的依存型論, 
+
+Our final goal is to prove normalization for a basic dependent type theory. The need of normalization is to get the decidability of type checking, which makes it possible to implement a type checker for the theory.
+
+#definition[ 
+  - A *_normalization structure_* for a type is a pair of a type theory is a pair of computable injective functions defined with respect to the judgemental equality of the type theory,
+    $nf_"ty" : Ty(SGG) -> Nf_"ty"$, $nf_"tm" : Tm(SGG, SA) -> Nf_"tm"$. where $Nf_"ty"$ and $Nf_"tm"$ are two sets where the equality on them is decidable (i.e. $forall x, y in Nf_*, (x = y "is decidable")$). 
+
+  - And we call a type theory enjoys *_normalization_* if there is a normalization structure for it.
+]
+
+Once a type theory enjoys normalization, we can decide the judgemental equality of two terms (or types) $su$ and $sv$ by checking whether $nf_* (su) = nf_* (sv)$ 
+
+We follow the normalization by evaluation (NbE) approach to construct the normalization structure. The sets $Nf_*$ will be the normal forms of the types and terms, where the equality on it is just syntactical equality, of course it is decidable. The $nf_"*"$ functions will be $nbe$ function, which we will define later.
+
+#remark[
+  - In practice, I mean implementation, the NbE algorithm is slightly different from the one we use to prove normalization. NbE sends a term to a "value" which is not a normal form, and the equality on values is not syntactical, thus it is not trivially decidable. 
+]
+
+We follow Andreas Abel's thesis to define the type theory with extrinic typing, which is called PTT, "P" for predictive (impredictivity is another story), which includes pi types, cumulative hierarchy of universes, and natural numbers with recursion. 
+
+#let Nat = $cstx("Nat")$
+#let Fun = $cstx("Fun")$
+#let zero = $cstx("zero")$
+#let suc = $cstx("suc")$
+#let rec = $cstx("rec")$
+#let Set = $cstx("Set")$
+#let var = $cstx("var")$
+#let lam = $cstx(lambda)$
+#let piT = $cstx(Pi)$
+$
+  "Cst" &in.rev cstx(c) &&::= quad Nat | zero | suc | rec | Set_k quad k in NN\
+
+  "Exp" &in.rev cstx(r), cstx(s), cstx(t), cstx(R), cstx(S), cstx(T) &&::= quad cstx(c) | var_i | lam cstx(t) | cstx(r" "s) | cstx(t[cstx(sigma)]) | piT_cstx(S) cstx(T) quad i in "DBI"\
+  "Subst" &in.rev cstx(sigma), cstx(tau) &&::= quad cstx(arrow.t) | cstx(id) | cstx(sigma compose tau) | cstx((sigma\, tau)) \
+  "Cxt" &in.rev cstx(Gamma), cstx(Delta) &&::= quad cstx(()) | cstx(Gamma\, cstx(S))\
+  \
+  "Exp" supset "Nf" &in.rev cstx(v), cstx(w), cstx(V), cstx(W) &&::= quad cstx(u) | piT_cstx(V) cstx(W)  | lam cstx(v) | Nat | zero | suc cstx(v) | Set_k\
+  "Nf" supset "Ne" &in.rev cstx(u), cstx(U) &&::= quad var_i | cstx(u) cstx(v) | rec_cstx(V)" "cstx(v_z)" "cstx(v_s)" "cstx(u)
+$
+
+We omitted typing rules, you can find them in Abel's thesis (Figure 4.2).
+
+== Values and Evaluation
+
+First we need a evaluation function to evaluate a term to a value. A value is a representation for the "well-evaluated" term, the main difference between a value and a normal form is that a value does not expecting the term under a binder to be evaluated. We adapt #ccls("closure") to handle those terms.
+
+#let Val = $bold("Val")$
+#let Env = $bold("Env")$
+#let Cls = $bold("Cls")$
+#let VNf = $bold("NfVal")$
+#let VNe = $bold("NeVal")$
+#let vlam = $cval(lambda)$
+#let reflect(A) = $cval(arrow.t)^#A$
+#let reify(A) = $cnf(arrow.b)_#A$
+#let piV = $cval(Pi)$
+
+#let aa = $cval(a)$
+#let bb = $cval(b)$
+#let AA = $cval(A)$
+#let BB = $cval(B)$
+
+#let ee = $cne(e)$
+#let EE = $cne(E)$
+
+#let rr = $cval(rho)$
+#let dd = $cnf(d)$
+#let DD = $cnf(D)$
+
+#let ff = $ccls(f)$
+#let FF = $ccls(F)$
+
+#let NatV = $cval("Nat")$
+#let zeroV = $cval("zero")$
+#let sucV = $cval("suc")$
+
+#let varV = $cval("var")$
+#let appV = $cval("app")$
+#let recN = $cne("rec")$
+$
+  Val &in.rev aa, bb, AA, BB &&::= quad 
+      reflect(AA) ee 
+    | vlam ccls(f) 
+    | piV(AA, FF)
+    | NatV
+    | zeroV
+    | sucV(aa)\
+  VNe &in.rev ee, EE &&::= quad varV_k | appV(ee, aa) | recN(aa, bb, ee)\
+  
+$
+
